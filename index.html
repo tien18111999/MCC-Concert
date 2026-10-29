@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="vi" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCC Community Music Festival 2026</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        mcc: {
+                            navy: '#15284B',      // Xanh Navy từ Logo
+                            navylight: '#1e3867',
+                            red: '#B91C1C',       // Đỏ Crimson từ khối lập phương Logo
+                            redhover: '#991B1B',
+                            gray: '#64748B',      // Xám chữ Career College
+                            light: '#F8FAFC'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased">
+
+    <!-- NAVIGATION BAR -->
+    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur shadow-sm border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <!-- Brand Logo -->
+            <a href="#" class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-mcc-navy flex items-center justify-center rounded-lg shadow-inner">
+                    <div class="w-5 h-5 bg-mcc-red rotate-45 transform"></div>
+                </div>
+                <div>
+                    <span class="block text-xl font-black tracking-tight text-mcc-navy uppercase leading-none">MIDWESTERN</span>
+                    <span class="block text-[10px] tracking-widest text-mcc-gray font-semibold uppercase mt-0.5">Community Music Festival</span>
+                </div>
+            </a>
+
+            <!-- Desktop Nav Items -->
+            <nav class="hidden md:flex items-center space-x-8 font-semibold text-slate-600">
+                <a href="#about" class="hover:text-mcc-red transition">About</a>
+                <button onclick="openTicketModal()" class="hover:text-mcc-red transition">Tickets</button>
+                <a href="#vendors" class="hover:text-mcc-red transition">Vendors</a>
+                <a href="#schedules" class="hover:text-mcc-red transition">Schedules</a>
+                <a href="#map" class="hover:text-mcc-red transition">Map</a>
+            </nav>
+
+            <!-- Header Action -->
+            <div class="flex items-center gap-3">
+                <button onclick="openTicketModal()" class="bg-mcc-red text-white hover:bg-mcc-redhover px-5 py-2.5 rounded-full font-bold shadow-md shadow-red-200 transition text-sm">
+                    RSVP / Join Waitlist
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 1. HERO SECTION -->
+    <section class="relative bg-gradient-to-b from-mcc-navy via-[#1b325c] to-mcc-navy text-white pt-20 pb-28 px-4 overflow-hidden">
+        <!-- Background Pattern Decor -->
+        <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none"></div>
+
+        <div class="max-w-4xl mx-auto text-center relative z-10">
+            <span class="inline-block px-4 py-1.5 rounded-full bg-white/10 text-red-300 font-semibold text-xs tracking-wider uppercase mb-6 border border-white/20">
+                Official MCC Community Event
+            </span>
+            <h1 class="text-4xl sm:text-6xl font-black tracking-tight leading-tight mb-6">
+                Rhythms of Together: <br><span class="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-amber-200">2026 Community Music & Family Festival</span>
+            </h1>
+            <p class="text-lg sm:text-xl text-slate-200 max-w-2xl mx-auto leading-relaxed mb-10">
+                Join us for an unforgettable day of live local music, delicious street food, and creative family fun. Come celebrate our neighborhood and help support a great local cause!
+            </p>
+
+            <!-- Quick Info Bar -->
+            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 max-w-3xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4 text-center mb-10">
+                <div class="border-b md:border-b-0 md:border-r border-white/15 pb-3 md:pb-0">
+                    <p class="text-xs text-slate-300 font-semibold uppercase tracking-wider">Date & Time</p>
+                    <p class="font-bold text-white text-sm sm:text-base mt-1"><i class="far fa-calendar-alt text-red-400 mr-2"></i>Sat, June 12, 2027<br><span class="font-normal text-xs text-slate-200">12:00 PM – 8:00 PM</span></p>
+                </div>
+                <div class="border-b md:border-b-0 md:border-r border-white/15 pb-3 md:pb-0">
+                    <p class="text-xs text-slate-300 font-semibold uppercase tracking-wider">Location</p>
+                    <p class="font-bold text-white text-sm sm:text-base mt-1"><i class="fas fa-map-marker-alt text-red-400 mr-2"></i>Columbus Park<br><span class="font-normal text-xs text-slate-200">500 S Central Ave, Chicago</span></p>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-300 font-semibold uppercase tracking-wider">Admission</p>
+                    <p class="font-bold text-amber-300 text-sm sm:text-base mt-1"><i class="fas fa-ticket-alt mr-1"></i> Coming soon!</p>
+                </div>
+            </div>
+
+            <!-- CTA Buttons (Đã đổi tên và xóa nút Donate) -->
+            <div class="flex justify-center items-center">
+                <button onclick="openTicketModal()" class="w-full sm:w-auto px-8 py-3.5 bg-mcc-red hover:bg-mcc-redhover text-white font-bold rounded-xl shadow-lg transition transform hover:-translate-y-0.5">
+                    Join Waitlist
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. ABOUT THE FESTIVAL -->
+    <section id="about" class="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-mcc-navy tracking-tight mb-4">
+                More Than Just Music — A Celebration of Community
+            </h2>
+            <div class="w-20 h-1 bg-mcc-red mx-auto rounded-full mb-6"></div>
+            <p class="text-slate-600 leading-relaxed text-base sm:text-lg mb-6">
+                Welcome to the Community Music & Family Festival, hosted by <strong>Midwestern Career College</strong>. Designed to bring together 500 to 700 neighbors in a safe, welcoming, and vibrant space, this one-day festival blends local artistry, delicious food, and family-friendly entertainment.
+            </p>
+            <p class="text-slate-600 leading-relaxed text-sm sm:text-base bg-blue-50/80 p-5 rounded-xl border-l-4 border-mcc-navy text-left">
+                Because this event is powered by our community, every dollar raised through donations, sponsorships, and vendor partnerships goes directly toward supporting our community fund's mission and keeping future neighborhood events thriving.
+            </p>
+        </div>
+
+        <!-- 4 Highlights Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Card 1 -->
+            <div class="bg-white p-7 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition">
+                <div class="w-12 h-12 rounded-xl bg-red-100 text-mcc-red flex items-center justify-center text-xl mb-5">
+                    <i class="fas fa-guitar"></i>
+                </div>
+                <h3 class="text-lg font-bold text-mcc-navy mb-2">Live Community Stage</h3>
+                <p class="text-sm text-slate-600 leading-relaxed">
+                    Enjoy 8 hours of continuous entertainment featuring 4 talented local bands/musicians and an energizing live DJ.
+                </p>
+            </div>
+            <!-- Card 2 -->
+            <div class="bg-white p-7 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition">
+                <div class="w-12 h-12 rounded-xl bg-blue-100 text-mcc-navy flex items-center justify-center text-xl mb-5">
+                    <i class="fas fa-utensils"></i>
+                </div>
+                <h3 class="text-lg font-bold text-mcc-navy mb-2">Local Food Court</h3>
+                <p class="text-sm text-slate-600 leading-relaxed">
+                    Grab a bite from 5–6 favorite local food vendors serving up delicious meals, snacks, and drinks—supporting our community fund.
+                </p>
+            </div>
+            <!-- Card 3 -->
+            <div class="bg-white p-7 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition">
+                <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl mb-5">
+                    <i class="fas fa-child"></i>
+                </div>
+                <h3 class="text-lg font-bold text-mcc-navy mb-2">Interactive Kids Zone</h3>
+                <p class="text-sm text-slate-600 leading-relaxed">
+                    Keep the little ones smiling all afternoon with face painting, balloon artists, arts & crafts, and safe lawn games.
+                </p>
+            </div>
+            <!-- Card 4 -->
+            <div class="bg-white p-7 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition">
+                <div class="w-12 h-12 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center text-xl mb-5">
+                    <i class="fas fa-compact-disc"></i>
+                </div>
+                <h3 class="text-lg font-bold text-mcc-navy mb-2">Glow & Groove Finale</h3>
+                <p class="text-sm text-slate-600 leading-relaxed">
+                    Closing out from 7:00 PM to 8:00 PM with an upbeat DJ finale, LED glow lights, and a massive community dance party!
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION: SCHEDULES PREVIEW -->
+    <section id="schedules" class="py-16 bg-slate-100 border-y border-slate-200">
+        <div class="max-w-4xl mx-auto px-4">
+            <div class="text-center mb-10">
+                <h2 class="text-2xl font-bold text-mcc-navy">Festival Schedule Lineup</h2>
+                <p class="text-slate-500 text-sm mt-1">Saturday, June 12, 2027 • Columbus Park</p>
+            </div>
+            <div class="space-y-3 font-sans">
+                <!--<div class="bg-white p-4 rounded-xl flex items-center justify-between shadow-sm">
+                    <span class="font-bold text-mcc-navy w-32">12:00 PM</span>
+                    <span class="text-slate-700 font-medium flex-1">Gates Open & Welcome Ceremony</span>
+                    <span class="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full">All Zones</span>
+                </div>
+                <div class="bg-white p-4 rounded-xl flex items-center justify-between shadow-sm">
+                    <span class="font-bold text-mcc-navy w-32">01:00 PM - 05:00 PM</span>
+                    <span class="text-slate-700 font-medium flex-1">Live Acoustic & Local Band Performances</span>
+                    <span class="text-xs bg-red-100 text-mcc-red px-3 py-1 rounded-full font-bold">Main Stage</span>
+                </div>
+                <div class="bg-white p-4 rounded-xl flex items-center justify-between shadow-sm">
+                    <span class="font-bold text-mcc-navy w-32">05:00 PM - 07:00 PM</span>
+                    <span class="text-slate-700 font-medium flex-1">Headline Community Acts & Evening Vibes</span>
+                    <span class="text-xs bg-red-100 text-mcc-red px-3 py-1 rounded-full font-bold">Main Stage</span>
+                </div>
+                <div class="bg-white p-4 rounded-xl flex items-center justify-between shadow-sm border-l-4 border-purple-600">
+                    <span class="font-bold text-purple-700 w-32">07:00 PM - 08:00 PM</span>
+                    <span class="text-slate-800 font-bold flex-1">Glow & Groove Dance Party Finale (LED Glow)</span>
+                    <span class="text-xs bg-purple-100 text-purple-800 px-3 py-1 rounded-full font-bold">DJ Stage</span>
+                </div> -->
+                <div class="bg-white p-4 rounded-xl flex items-center justify-between shadow-sm opacity-75">
+                    <span class="font-bold text-slate-400 w-32"><i class="far fa-clock mr-1"></i> TBA</span>
+                    <span class="text-slate-600 font-medium flex-1">Opening Ceremony & Local Bands <span class="italic text-slate-400 text-xs ml-2">(Schedule Coming Soon)</span></span>
+                    <span class="text-xs bg-amber-100 text-amber-800 px-3 py-1 rounded-full font-bold">Coming Soon</span>
+                </div>
+                <div class="bg-white p-4 rounded-xl flex items-center justify-between shadow-sm opacity-75">
+                    <span class="font-bold text-slate-400 w-32"><i class="far fa-clock mr-1"></i> TBA</span>
+                    <span class="text-slate-600 font-medium flex-1">Glow & Groove Dance Party Finale <span class="italic text-slate-400 text-xs ml-2">(Schedule Coming Soon)</span></span>
+                    <span class="text-xs bg-purple-100 text-purple-800 px-3 py-1 rounded-full font-bold">Coming Soon</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION: VENDORS -->
+    <section id="vendors" class="py-16 max-w-7xl mx-auto px-4 text-center">
+        <h2 class="text-2xl font-bold text-mcc-navy mb-2">Vendors & Partners</h2>
+        <p class="text-slate-600 max-w-xl mx-auto text-sm mb-8">
+            Enjoy our hand-picked selection of 5–6 local food trucks, beverage stations, and local merchandise booths!
+        </p>
+        <!--<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto text-sm">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 font-semibold text-slate-700">🍔 Street Tacos & Bites</div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 font-semibold text-slate-700">🍧 Artisan Shaved Ice</div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 font-semibold text-slate-700">☕ Coffee & Cold Brews</div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 font-semibold text-slate-700">🎨 Community Merch Tent</div>
+        </div> -->
+        <div class="bg-slate-50 p-10 rounded-2xl shadow-sm border border-slate-200 text-center max-w-2xl mx-auto mb-6">
+            <div class="w-14 h-14 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-2xl mx-auto mb-4">
+                <i class="fas fa-store"></i>
+            </div>
+            <span class="inline-block bg-amber-100 text-amber-800 text-xs px-3 py-1 font-bold rounded-full mb-3 uppercase tracking-wider">
+                Coming Soon!
+            </span>
+            <h3 class="text-xl font-extrabold text-mcc-navy mb-2">Food Trucks & Partner Booths Lineup</h3>
+            <p class="text-slate-600 text-sm max-w-md mx-auto leading-relaxed">
+                Our curated list of local food vendors, beverage stations, and community partner booths will be announced soon. Stay tuned!
+            </p>
+        </div>
+    </section>
+
+    <!-- 3. MAP SECTION -->
+    <section id="map" class="py-20 bg-slate-100 border-t border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-10">
+                <span class="text-xs uppercase tracking-wider font-bold text-mcc-red">Event Layout</span>
+                <h2 class="text-3xl font-extrabold text-mcc-navy mt-1">Festival Site Map</h2>
+                <p class="text-slate-600 text-sm mt-2">
+                    Columbus Park – Southeast sports fields, next to the fieldhouse (500 S Central Ave, Chicago)
+                </p>
+            </div>
+
+            <!-- Interactive Map Wrapper -->
+            <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden p-4 sm:p-6">
+                <div class="relative rounded-xl overflow-hidden bg-slate-900 group">
+                    <!-- Placeholder using the site map uploaded -->
+                    <img src="./site_map.png" onerror="this.src='https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?q=80&w=1200&auto=format&fit=crop'" alt="Festival Site Map" class="w-full h-auto object-cover rounded-lg shadow-inner">
+                </div>
+
+                <!-- Map Features / Legend Summary -->
+                <div class="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3.5 h-3.5 rounded bg-purple-700"></span>
+                        <span class="font-medium text-slate-700">Stage & Main Entrance</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3.5 h-3.5 rounded bg-orange-400"></span>
+                        <span class="font-medium text-slate-700">Food Court (5 Vendors)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3.5 h-3.5 rounded bg-green-500"></span>
+                        <span class="font-medium text-slate-700">Kids Zone (Softball field)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3.5 h-3.5 rounded bg-yellow-800"></span>
+                        <span class="font-medium text-slate-700">21+ Beer Area (Fenced)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3.5 h-3.5 rounded bg-blue-600"></span>
+                        <span class="font-medium text-slate-700">First Aid & Info HQ</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3.5 h-3.5 rounded bg-sky-300"></span>
+                        <span class="font-medium text-slate-700">Restrooms (ADA Compliant)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3.5 h-3.5 rounded bg-red-600"></span>
+                        <span class="font-medium text-slate-700">Emergency Exits (NW & SE)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3.5 h-3.5 rounded bg-slate-800"></span>
+                        <span class="font-medium text-slate-700">Security Checkpoints</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-mcc-navy text-slate-300 py-14 border-t border-slate-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-3 gap-8 text-sm">
+            <!-- Col 1 -->
+            <div>
+                <h4 class="text-white font-bold text-base mb-3">MCC Music Festival</h4>
+                <p class="text-slate-300 leading-relaxed mb-4">
+                    Hosted by <strong>Midwestern Career College</strong>.<br>
+                    Empowering our students, neighbors, and community through education and engagement.
+                </p>
+                <button onclick="toggleAdminPanel()" class="text-xs text-slate-400 hover:text-white underline">
+                    <i class="fas fa-lock text-[10px]"></i> Staff Waitlist Portal
+                </button>
+            </div>
+            <!-- Col 2 -->
+            <div>
+                <h4 class="text-white font-bold text-base mb-3">Contact Information</h4>
+                <ul class="space-y-2">
+                    <li><i class="fas fa-envelope mr-2 text-mcc-red"></i> info@mccollege.edu</li>
+                    <li><i class="fas fa-phone mr-2 text-mcc-red"></i> (312) 236-9000</li>
+                    <li><i class="fas fa-map-pin mr-2 text-mcc-red"></i> Chicago, IL</li>
+                </ul>
+            </div>
+            <!-- Col 3 -->
+            <div>
+                <h4 class="text-white font-bold text-base mb-3">Follow Us For Updates</h4>
+                <p class="text-slate-300 mb-4 text-xs leading-relaxed">Stay updated with artist lineups and ticket drop announcements.</p>
+                <div class="flex space-x-3 text-xl">
+                    <a href="https://facebook.com" target="_blank" class="w-9 h-9 rounded-full bg-white/10 hover:bg-mcc-red flex items-center justify-center transition"><i class="fab fa-facebook-f text-sm"></i></a>
+                    <a href="https://instagram.com" target="_blank" class="w-9 h-9 rounded-full bg-white/10 hover:bg-mcc-red flex items-center justify-center transition"><i class="fab fa-instagram text-sm"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto px-4 mt-10 pt-6 border-t border-white/10 text-center text-xs text-slate-400">
+            &copy; 2026 Midwestern Career College. All rights reserved.
+        </div>
+    </footer>
+
+    <!-- MODAL: TICKET WAITLIST -->
+    <div id="ticketModal" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 sm:p-8 relative shadow-2xl animate-fade-in">
+            <button onclick="closeTicketModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+            <div class="text-center">
+                <span class="inline-block bg-amber-100 text-amber-800 text-xs px-3 py-1 font-bold rounded-full mb-3 uppercase tracking-wider">
+                    Admission: Coming Soon!
+                </span>
+                <h3 class="text-2xl font-black text-mcc-navy mb-2">Be the First to Know</h3>
+                <p class="text-slate-600 text-sm mb-6">
+                    General Admission tickets & Free RSVPs will be released soon. Join our priority waitlist to get notified first!
+                </p>
+                
+                <form id="waitlistForm" onsubmit="handleWaitlistSubmit(event)" class="space-y-4 text-left">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Your Full Name</label>
+                        <input type="text" id="userName" required placeholder="John Doe" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-mcc-navy text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Email Address</label>
+                        <input type="email" id="userEmail" required placeholder="you@example.com" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-mcc-navy text-sm">
+                    </div>
+                    <button type="submit" class="w-full bg-mcc-red hover:bg-mcc-redhover text-white font-bold py-3 rounded-lg shadow-md transition text-sm">
+                        Join Priority Waitlist
+                    </button>
+                </form>
+
+                <div id="successMsg" class="hidden mt-4 p-3 bg-green-50 border border-green-200 text-green-700 text-xs rounded-lg font-medium">
+                    🎉 Thank you! You have been added to the VIP notification list.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STAFF/ADMIN VIEW (DRAWER PANEL) -->
+    <div id="adminPanel" class="fixed bottom-4 right-4 z-50 bg-white border border-slate-300 shadow-2xl rounded-2xl p-4 w-96 hidden">
+        <div class="flex justify-between items-center mb-3 pb-2 border-b">
+            <h4 class="font-bold text-xs uppercase tracking-wide text-mcc-navy"><i class="fas fa-users-cog mr-1"></i> Staff Waitlist Tracker</h4>
+            <button onclick="toggleAdminPanel()" class="text-slate-400 hover:text-slate-600 text-xs"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="max-h-48 overflow-y-auto mb-3" id="waitlistEntries">
+            <!-- Entries injected via JavaScript -->
+        </div>
+        <div class="flex gap-2">
+            <button onclick="exportCSV()" class="flex-1 text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-800 py-1.5 rounded font-bold">
+                <i class="fas fa-file-export mr-1"></i> Export CSV
+            </button>
+            <button onclick="clearWaitlist()" class="text-[11px] bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded font-bold">
+                Clear
+            </button>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // Modal Handlers
+        function openTicketModal() {
+            document.getElementById('ticketModal').classList.remove('hidden');
+        }
+
+        function closeTicketModal() {
+            document.getElementById('ticketModal').classList.add('hidden');
+            document.getElementById('successMsg').classList.add('hidden');
+        }
+
+        // Waitlist Storage Logic
+        function handleWaitlistSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('userName').value.trim();
+            const email = document.getElementById('userEmail').value.trim();
+
+            if (!email) return;
+
+            // Lấy danh sách hiện tại từ LocalStorage
+            let waitlist = JSON.parse(localStorage.getItem('mcc_festival_waitlist') || '[]');
+            waitlist.push({
+                name: name || 'Guest',
+                email: email,
+                timestamp: new Date().toLocaleString()
+            });
+
+            // Lưu lại
+            localStorage.setItem('mcc_festival_waitlist', JSON.stringify(waitlist));
+
+            // Hiển thị thông báo
+            document.getElementById('waitlistForm').reset();
+            document.getElementById('successMsg').classList.remove('hidden');
+            renderWaitlist();
+
+            setTimeout(() => {
+                closeTicketModal();
+            }, 1800);
+        }
+
+        // Toggle Staff Admin Tracker
+        function toggleAdminPanel() {
+            const panel = document.getElementById('adminPanel');
+            panel.classList.toggle('hidden');
+            renderWaitlist();
+        }
+
+        function renderWaitlist() {
+            const container = document.getElementById('waitlistEntries');
+            const waitlist = JSON.parse(localStorage.getItem('mcc_festival_waitlist') || '[]');
+            
+            if (waitlist.length === 0) {
+                container.innerHTML = '<p class="text-xs text-slate-400 italic py-2 text-center">No signups recorded yet.</p>';
+                return;
+            }
+
+            container.innerHTML = waitlist.map((item, idx) => `
+                <div class="text-[11px] py-1.5 border-b border-slate-100 flex justify-between items-center">
+                    <div>
+                        <span class="font-bold text-slate-800">${item.name}</span>
+                        <span class="text-slate-500 block text-[10px]">${item.email}</span>
+                    </div>
+                    <span class="text-[9px] text-slate-400">${item.timestamp.split(',')[0]}</span>
+                </div>
+            `).reverse().join('');
+        }
+
+        // Xuất file CSV cho ban tổ chức
+        function exportCSV() {
+            const waitlist = JSON.parse(localStorage.getItem('mcc_festival_waitlist') || '[]');
+            if (waitlist.length === 0) return alert('Waitlist is currently empty.');
+
+            let csvContent = "data:text/csv;charset=utf-8,Name,Email,Date\n";
+            waitlist.forEach(i => {
+                csvContent += `"${i.name}","${i.email}","${i.timestamp}"\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "mcc_festival_waitlist.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function clearWaitlist() {
+            if (confirm("Are you sure you want to clear the waitlist data?")) {
+                localStorage.removeItem('mcc_festival_waitlist');
+                renderWaitlist();
+            }
+        }
+    </script>
+</body>
+</html>
