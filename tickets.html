@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tickets | MCC Community Music Festival</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        mcc: {
+                            navy: '#15284B',
+                            navylight: '#1e3867',
+                            red: '#B91C1C',
+                            redhover: '#991B1B',
+                            gray: '#64748B',
+                            light: '#F8FAFC'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased">
+
+    <!-- NAVIGATION BAR -->
+    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur shadow-sm border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <a href="index.html" class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-mcc-navy flex items-center justify-center rounded-lg shadow-inner">
+                    <div class="w-5 h-5 bg-mcc-red rotate-45 transform"></div>
+                </div>
+                <div>
+                    <span class="block text-xl font-black tracking-tight text-mcc-navy uppercase leading-none">MIDWESTERN</span>
+                    <span class="block text-[10px] tracking-widest text-mcc-gray font-semibold uppercase mt-0.5">Community Music Festival</span>
+                </div>
+            </a>
+
+            <nav class="hidden md:flex items-center space-x-8 font-semibold text-slate-600">
+                <a href="index.html#about" class="hover:text-mcc-red transition">About</a>
+                <a href="tickets.html" class="text-mcc-red" aria-current="page">Tickets</a>
+                <a href="index.html#vendors" class="hover:text-mcc-red transition">Vendors</a>
+                <a href="index.html#schedules" class="hover:text-mcc-red transition">Schedules</a>
+                <a href="index.html#map" class="hover:text-mcc-red transition">Map</a>
+                <a href="index.html#volunteer" class="hover:text-mcc-red transition">Volunteer</a>
+            </nav>
+
+            <a href="#buy" class="bg-mcc-red text-white hover:bg-mcc-redhover px-5 py-2.5 rounded-full font-bold shadow-md shadow-red-200 transition text-sm">
+                Buy Tickets
+            </a>
+        </div>
+    </header>
+
+    <!-- HERO -->
+    <section class="relative bg-gradient-to-b from-mcc-navy via-[#1b325c] to-mcc-navy text-white pt-16 pb-24 px-4 overflow-hidden">
+        <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none"></div>
+        <div class="max-w-3xl mx-auto text-center relative z-10">
+            <a href="index.html" class="inline-flex items-center gap-2 text-xs text-slate-300 hover:text-white mb-6">
+                <i class="fas fa-arrow-left"></i> Back to festival home
+            </a>
+            <span class="block w-fit mx-auto px-4 py-1.5 rounded-full bg-white/10 text-amber-300 font-semibold text-xs tracking-wider uppercase mb-6 border border-white/20">
+                <i class="fas fa-ticket-alt mr-1"></i> Tickets from $8 · Kids under 12 free
+            </span>
+            <h1 class="text-4xl sm:text-5xl font-black tracking-tight leading-tight mb-5">
+                Get Your Festival Tickets
+            </h1>
+            <p class="text-lg text-slate-200 leading-relaxed">
+                Every ticket helps support our community fund and keeps future neighborhood events thriving.
+            </p>
+            <div class="mt-8 flex flex-col sm:flex-row justify-center gap-3 text-sm">
+                <span class="bg-white/10 border border-white/20 rounded-xl px-4 py-2"><i class="far fa-calendar-alt text-red-400 mr-2"></i>Sat, June 12, 2027 · 12:00 PM – 8:00 PM</span>
+                <span class="bg-white/10 border border-white/20 rounded-xl px-4 py-2"><i class="fas fa-map-marker-alt text-red-400 mr-2"></i>Columbus Park, 500 S Central Ave, Chicago</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- TICKET SELECTION + ORDER SUMMARY -->
+    <section id="buy" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 relative z-20 pb-20 scroll-mt-24">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+
+            <!-- Ticket list (rows rendered from TICKETS in the script) -->
+            <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg border border-slate-200 p-5 sm:p-7">
+                <h2 class="text-xl font-extrabold text-mcc-navy mb-1">Choose Your Tickets</h2>
+                <p class="text-sm text-slate-500 mb-5">Select how many of each ticket you need (max 10 per type).</p>
+                <div id="ticketList" class="divide-y divide-slate-100"></div>
+            </div>
+
+            <!-- Order summary -->
+            <aside class="bg-white rounded-2xl shadow-lg border border-slate-200 p-5 sm:p-7 lg:sticky lg:top-28">
+                <h2 class="text-xl font-extrabold text-mcc-navy mb-4">Order Summary</h2>
+
+                <div id="summaryLines" class="space-y-1.5 text-sm text-slate-700 mb-4">
+                    <p class="text-slate-400 italic">No tickets selected yet.</p>
+                </div>
+
+                <!-- Discount code -->
+                <label for="discountInput" class="block text-xs font-semibold text-slate-700 mb-1">Discount code</label>
+                <div class="flex gap-2">
+                    <input id="discountInput" type="text" autocomplete="off" placeholder="Enter code" class="flex-1 min-w-0 px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-mcc-navy text-sm uppercase">
+                    <button id="applyDiscountBtn" type="button" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-sm font-bold">Apply</button>
+                </div>
+                <p id="discountMsg" class="text-xs mt-1.5 min-h-[1rem]" aria-live="polite"></p>
+
+                <!-- Optional donation -->
+                <label for="donationInput" class="block text-xs font-semibold text-slate-700 mb-1 mt-3">Add a donation to the community fund (optional)</label>
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+                    <input id="donationInput" type="number" min="0" max="1000" step="1" placeholder="0" class="w-full pl-7 pr-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-mcc-navy text-sm">
+                </div>
+
+                <!-- Totals -->
+                <dl class="mt-5 pt-4 border-t border-slate-200 space-y-1.5 text-sm">
+                    <div class="flex justify-between"><dt class="text-slate-600">Subtotal</dt><dd id="subtotalAmt">$0.00</dd></div>
+                    <div class="flex justify-between text-green-700"><dt>Discount</dt><dd id="discountAmt">−$0.00</dd></div>
+                    <div class="flex justify-between"><dt class="text-slate-600">Donation</dt><dd id="donationAmt">$0.00</dd></div>
+                    <div class="flex justify-between text-lg font-black text-mcc-navy pt-2 border-t border-slate-100"><dt>Total</dt><dd id="totalAmt">$0.00</dd></div>
+                </dl>
+
+                <button id="payBtn" type="button" disabled class="mt-5 w-full bg-mcc-red hover:bg-mcc-redhover disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg shadow-md transition text-sm">
+                    Pay
+                </button>
+                <p class="text-[11px] text-slate-400 text-center mt-2"><i class="fas fa-lock mr-1"></i>Demo checkout. No real charge is made.</p>
+            </aside>
+        </div>
+    </section>
+
+    <!-- GOOD TO KNOW -->
+    <section class="pb-20">
+        <div class="max-w-3xl mx-auto px-4">
+            <h2 class="text-2xl font-bold text-mcc-navy text-center mb-8">Good to Know</h2>
+            <div class="space-y-3">
+                <details class="bg-white rounded-xl border border-slate-200 p-5 group">
+                    <summary class="font-semibold text-mcc-navy cursor-pointer list-none flex justify-between items-center">
+                        Do kids need a ticket?
+                        <i class="fas fa-chevron-down text-xs text-slate-400 group-open:rotate-180 transition"></i>
+                    </summary>
+                    <p class="text-sm text-slate-600 mt-3">Children under 12 get in free, but please add an "Under 12" ticket to your order so we can plan for everyone.</p>
+                </details>
+                <details class="bg-white rounded-xl border border-slate-200 p-5 group">
+                    <summary class="font-semibold text-mcc-navy cursor-pointer list-none flex justify-between items-center">
+                        Are volunteers free?
+                        <i class="fas fa-chevron-down text-xs text-slate-400 group-open:rotate-180 transition"></i>
+                    </summary>
+                    <p class="text-sm text-slate-600 mt-3">Yes. Registered volunteers get free entry. Not signed up yet? <a href="index.html#volunteer" class="text-mcc-red underline">Become a volunteer</a>.</p>
+                </details>
+                <details class="bg-white rounded-xl border border-slate-200 p-5 group">
+                    <summary class="font-semibold text-mcc-navy cursor-pointer list-none flex justify-between items-center">
+                        Will alcohol be served?
+                        <i class="fas fa-chevron-down text-xs text-slate-400 group-open:rotate-180 transition"></i>
+                    </summary>
+                    <p class="text-sm text-slate-600 mt-3">There is a fenced 21+ Beer Area on site. Please bring a valid ID.</p>
+                </details>
+                <details class="bg-white rounded-xl border border-slate-200 p-5 group">
+                    <summary class="font-semibold text-mcc-navy cursor-pointer list-none flex justify-between items-center">
+                        Is the venue accessible?
+                        <i class="fas fa-chevron-down text-xs text-slate-400 group-open:rotate-180 transition"></i>
+                    </summary>
+                    <p class="text-sm text-slate-600 mt-3">ADA-compliant restrooms are available, and staff at the First Aid &amp; Info HQ can help with any needs.</p>
+                </details>
+                <details class="bg-white rounded-xl border border-slate-200 p-5 group">
+                    <summary class="font-semibold text-mcc-navy cursor-pointer list-none flex justify-between items-center">
+                        Who do I contact with questions?
+                        <i class="fas fa-chevron-down text-xs text-slate-400 group-open:rotate-180 transition"></i>
+                    </summary>
+                    <p class="text-sm text-slate-600 mt-3">Email <a href="mailto:info@mccollege.edu" class="text-mcc-red underline">info@mccollege.edu</a> or call (312) 236-9000.</p>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-mcc-navy text-slate-300 py-10 border-t border-slate-700">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
+            <p>Hosted by <strong class="text-white">Midwestern Career College</strong></p>
+            <div class="flex items-center gap-4">
+                <a href="index.html" class="hover:text-white">Festival Home</a>
+                <a href="https://www.instagram.com/mcc.turnitup/" target="_blank" rel="noopener noreferrer" class="w-9 h-9 rounded-full bg-white/10 hover:bg-mcc-red flex items-center justify-center transition" aria-label="Instagram"><i class="fab fa-instagram text-sm"></i></a>
+            </div>
+        </div>
+        <p class="text-center text-xs text-slate-400 mt-6">&copy; 2026 Midwestern Career College. All rights reserved.</p>
+    </footer>
+
+    <!-- PAYMENT MODAL -->
+    <div id="payModal" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="payTitle">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 sm:p-8 relative shadow-2xl max-h-[95vh] overflow-y-auto">
+            <button id="closePayBtn" type="button" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600" aria-label="Close">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+
+            <!-- Step 1: card form -->
+            <div id="stepForm">
+                <h3 id="payTitle" class="text-2xl font-black text-mcc-navy mb-1">Payment</h3>
+                <p class="text-sm text-slate-600 mb-5">Total to pay: <strong id="modalTotal" class="text-mcc-navy">$0.00</strong></p>
+
+                <form id="cardForm" novalidate class="space-y-4">
+                    <div>
+                        <label for="cardName" class="block text-xs font-semibold text-slate-700 mb-1">Name on card</label>
+                        <input id="cardName" type="text" autocomplete="cc-name" placeholder="John Doe" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-mcc-navy text-sm">
+                    </div>
+                    <div>
+                        <label for="cardNumber" class="block text-xs font-semibold text-slate-700 mb-1">Card number (credit or debit)</label>
+                        <div class="relative">
+                            <input id="cardNumber" type="text" inputmode="numeric" autocomplete="cc-number" placeholder="1234 5678 9012 3456" maxlength="23" class="w-full pl-4 pr-20 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-mcc-navy text-sm tracking-wider">
+                            <span id="cardBrand" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500"></span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="cardExpiry" class="block text-xs font-semibold text-slate-700 mb-1">Expiry (MM/YY)</label>
+                            <input id="cardExpiry" type="text" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/YY" maxlength="5" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-mcc-navy text-sm">
+                        </div>
+                        <div>
+                            <label for="cardCvc" class="block text-xs font-semibold text-slate-700 mb-1">CVC</label>
+                            <input id="cardCvc" type="password" inputmode="numeric" autocomplete="cc-csc" placeholder="123" maxlength="4" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-mcc-navy text-sm">
+                        </div>
+                    </div>
+                    <p id="cardError" class="hidden text-xs text-red-600 font-medium" role="alert"></p>
+                    <button type="submit" class="w-full bg-mcc-red hover:bg-mcc-redhover text-white font-bold py-3 rounded-lg shadow-md transition text-sm">
+                        <i class="fas fa-lock mr-1"></i> Pay <span id="payBtnAmount"></span>
+                    </button>
+                    <p class="text-[11px] text-slate-400 text-center">Demo checkout: card details are never sent or saved. Only the card brand and last 4 digits are recorded.</p>
+                </form>
+            </div>
+
+            <!-- Step 2: processing -->
+            <div id="stepProcessing" class="hidden text-center py-10">
+                <i class="fas fa-spinner fa-spin text-4xl text-mcc-navy mb-4"></i>
+                <p class="font-bold text-mcc-navy">Processing payment…</p>
+                <p class="text-xs text-slate-500 mt-1">Please don't close this window.</p>
+            </div>
+
+            <!-- Step 3: result -->
+            <div id="stepResult" class="hidden text-center">
+                <div id="resultIcon" class="w-16 h-16 rounded-full mx-auto flex items-center justify-center text-3xl mb-4"></div>
+                <h3 id="resultTitle" class="text-2xl font-black text-mcc-navy mb-2"></h3>
+                <p id="resultText" class="text-sm text-slate-600 mb-5"></p>
+                <dl id="receipt" class="text-left text-sm bg-slate-50 rounded-xl border border-slate-200 p-4 space-y-1.5 mb-5"></dl>
+                <button id="resultBtn" type="button" class="w-full bg-mcc-navy hover:bg-mcc-navylight text-white font-bold py-3 rounded-lg transition text-sm">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =====================================================================
+        // CONFIGURATION
+        // =====================================================================
+
+        // Ticket types. Prices are in cents to avoid rounding errors.
+        const TICKETS = [
+            { id: 'early',     name: 'Early Bird',        price: 800,  note: 'Limited-time online price' },
+            { id: 'general',   name: 'General Admission', price: 1000, note: 'Standard festival entry' },
+            { id: 'door',      name: 'At the Door',       price: 1200, note: 'Price for tickets bought at the gate on festival day' },
+            { id: 'senior',    name: 'Senior',            price: 800,  note: 'For senior guests' },
+            { id: 'child',     name: 'Under 12',          price: 0,    note: 'Kids 11 and under get in free' },
+            { id: 'volunteer', name: 'Volunteer',         price: 0,    note: 'For registered festival volunteers' },
+        ];
+        const MAX_PER_TYPE = 10;
+
+        // Discount codes dictionary: CODE -> percentage off the ticket subtotal.
+        // Codes are matched case-insensitively. Add new codes here.
+        const DISCOUNT_CODES = {
+            'MCC10': 10,   // example: 10% off
+        };
+
+        // Simulated card processor fee (like a typical online processor): 2.9% + $0.30 per paid order.
+        // This is recorded as the organizer's cost; it is NOT added to the customer's total.
+        const FEE_PERCENT = 2.9;
+        const FEE_FIXED_CENTS = 30;
+
+        // This test card number is always declined, so you can demo a failed payment.
+        const DECLINE_TEST_CARD = '4000000000000002';
+
+        // =====================================================================
+        // STATE + HELPERS
+        // =====================================================================
+        const qty = Object.fromEntries(TICKETS.map(t => [t.id, 0]));
+        let appliedCode = null; // { code, percent }
+
+        const $ = id => document.getElementById(id);
+        const money = cents => '$' + (cents / 100).toFixed(2);
+
+        function randomHex(bytes) {
+            const arr = new Uint8Array(bytes);
+            crypto.getRandomValues(arr);
+            return Array.from(arr, b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        function formatDate(d) {
+            const p = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+        }
+
+        function makeOrderId(d) {
+            const p = n => String(n).padStart(2, '0');
+            return `MCC-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${randomHex(3).toUpperCase()}`;
+        }
+
+        // =====================================================================
+        // TICKET LIST
+        // =====================================================================
+        function renderTicketList() {
+            const list = $('ticketList');
+            list.innerHTML = '';
+            TICKETS.forEach(t => {
+                const row = document.createElement('div');
+                row.className = 'py-4 flex items-center justify-between gap-4';
+                row.innerHTML = `
+                    <div class="min-w-0">
+                        <p class="font-bold text-mcc-navy">${t.name}</p>
+                        <p class="text-xs text-slate-500">${t.note}</p>
+                    </div>
+                    <div class="flex items-center gap-4 flex-shrink-0">
+                        <span class="font-black text-mcc-navy w-14 text-right">${t.price === 0 ? 'FREE' : money(t.price)}</span>
+                        <div class="flex items-center border border-slate-300 rounded-lg">
+                            <button type="button" data-id="${t.id}" data-step="-1" class="qty-btn w-9 h-9 text-slate-600 hover:bg-slate-100 rounded-l-lg" aria-label="Remove one ${t.name} ticket">−</button>
+                            <span id="qty-${t.id}" class="w-8 text-center font-bold text-sm" aria-live="polite">0</span>
+                            <button type="button" data-id="${t.id}" data-step="1" class="qty-btn w-9 h-9 text-slate-600 hover:bg-slate-100 rounded-r-lg" aria-label="Add one ${t.name} ticket">+</button>
+                        </div>
+                    </div>`;
+                list.appendChild(row);
+            });
+
+            list.addEventListener('click', e => {
+                const btn = e.target.closest('.qty-btn');
+                if (!btn) return;
+                const id = btn.dataset.id;
+                qty[id] = Math.min(MAX_PER_TYPE, Math.max(0, qty[id] + Number(btn.dataset.step)));
+                $('qty-' + id).textContent = qty[id];
+                updateSummary();
+            });
+        }
+
+        // =====================================================================
+        // ORDER CALCULATION
+        // =====================================================================
+        function getDonationCents() {
+            const v = parseFloat($('donationInput').value);
+            if (!isFinite(v) || v <= 0) return 0;
+            return Math.round(Math.min(v, 1000) * 100);
+        }
+
+        // Builds the order: one line per ticket type, with discount applied per line.
+        function computeOrder() {
+            const percent = appliedCode ? appliedCode.percent : 0;
+            const lines = TICKETS.filter(t => qty[t.id] > 0).map(t => {
+                const gross = t.price * qty[t.id];
+                const discount = Math.round(gross * percent / 100);
+                return { ticket: t, quantity: qty[t.id], gross, discount, net: gross - discount };
+            });
+            const subtotal = lines.reduce((s, l) => s + l.gross, 0);
+            const discount = lines.reduce((s, l) => s + l.discount, 0);
+            const donation = getDonationCents();
+            const total = subtotal - discount + donation;
+            const fee = total > 0 ? Math.round(total * FEE_PERCENT / 100) + FEE_FIXED_CENTS : 0;
+            return { lines, subtotal, discount, donation, total, fee };
+        }
+
+        function updateSummary() {
+            const order = computeOrder();
+            const box = $('summaryLines');
+            if (order.lines.length === 0) {
+                box.innerHTML = '<p class="text-slate-400 italic">No tickets selected yet.</p>';
+            } else {
+                box.innerHTML = order.lines.map(l => `
+                    <div class="flex justify-between">
+                        <span>${l.quantity} × ${l.ticket.name}</span>
+                        <span>${l.gross === 0 ? 'FREE' : money(l.gross)}</span>
+                    </div>`).join('');
+            }
+            $('subtotalAmt').textContent = money(order.subtotal);
+            $('discountAmt').textContent = '−' + money(order.discount);
+            $('donationAmt').textContent = money(order.donation);
+            $('totalAmt').textContent = money(order.total);
+
+            const btn = $('payBtn');
+            btn.disabled = order.lines.length === 0;
+            btn.textContent = order.lines.length && order.total === 0 ? 'Get Free Tickets' : 'Pay ' + (order.total ? money(order.total) : '');
+        }
+
+        // =====================================================================
+        // DISCOUNT CODES
+        // =====================================================================
+        function applyDiscount() {
+            const code = $('discountInput').value.trim().toUpperCase();
+            const msg = $('discountMsg');
+            if (!code) {
+                appliedCode = null;
+                msg.textContent = '';
+            } else if (Object.prototype.hasOwnProperty.call(DISCOUNT_CODES, code)) {
+                appliedCode = { code, percent: DISCOUNT_CODES[code] };
+                msg.textContent = `Code ${code} applied: ${appliedCode.percent}% off tickets.`;
+                msg.className = 'text-xs mt-1.5 min-h-[1rem] text-green-700 font-medium';
+            } else {
+                appliedCode = null;
+                msg.textContent = 'That code is not valid.';
+                msg.className = 'text-xs mt-1.5 min-h-[1rem] text-red-600 font-medium';
+            }
+            updateSummary();
+        }
+
+        // =====================================================================
+        // CARD VALIDATION (simulated, nothing leaves the browser)
+        // =====================================================================
+        function luhnValid(num) {
+            let sum = 0, dbl = false;
+            for (let i = num.length - 1; i >= 0; i--) {
+                let d = Number(num[i]);
+                if (dbl) { d *= 2; if (d > 9) d -= 9; }
+                sum += d;
+                dbl = !dbl;
+            }
+            return sum % 10 === 0;
+        }
+
+        function cardBrand(num) {
+            if (/^4/.test(num)) return 'Visa';
+            if (/^(5[1-5]|2[2-7])/.test(num)) return 'Mastercard';
+            if (/^3[47]/.test(num)) return 'Amex';
+            if (/^6(011|5)/.test(num)) return 'Discover';
+            return 'Card';
+        }
+
+        function validateCard() {
+            const name = $('cardName').value.trim();
+            const num = $('cardNumber').value.replace(/\D/g, '');
+            const exp = $('cardExpiry').value.trim();
+            const cvc = $('cardCvc').value.trim();
+            const brand = cardBrand(num);
+
+            if (name.length < 2) return { error: 'Please enter the name on the card.' };
+            if (num.length < 13 || num.length > 19 || !luhnValid(num)) return { error: 'Please enter a valid card number.' };
+
+            const m = exp.match(/^(\d{2})\/(\d{2})$/);
+            if (!m || Number(m[1]) < 1 || Number(m[1]) > 12) return { error: 'Please enter the expiry date as MM/YY.' };
+            const expEnd = new Date(2000 + Number(m[2]), Number(m[1]), 1); // first day after the expiry month
+            if (expEnd <= new Date()) return { error: 'This card has expired.' };
+
+            const cvcLen = brand === 'Amex' ? 4 : 3;
+            if (!new RegExp(`^\\d{${cvcLen}}$`).test(cvc)) return { error: `Please enter the ${cvcLen}-digit CVC.` };
+
+            return { brand, last4: num.slice(-4), declined: num === DECLINE_TEST_CARD };
+        }
+
+        // Input formatting
+        $('cardNumber').addEventListener('input', e => {
+            const digits = e.target.value.replace(/\D/g, '').slice(0, 19);
+            e.target.value = digits.replace(/(.{4})/g, '$1 ').trim();
+            $('cardBrand').textContent = digits.length ? cardBrand(digits) : '';
+        });
+        $('cardExpiry').addEventListener('input', e => {
+            const d = e.target.value.replace(/\D/g, '').slice(0, 4);
+            e.target.value = d.length > 2 ? d.slice(0, 2) + '/' + d.slice(2) : d;
+        });
+        $('cardCvc').addEventListener('input', e => {
+            e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4);
+        });
+
+        // =====================================================================
+        // CHECKOUT FLOW
+        // =====================================================================
+        function showStep(step) {
+            ['stepForm', 'stepProcessing', 'stepResult'].forEach(s => $(s).classList.toggle('hidden', s !== step));
+        }
+
+        function openPayModal() {
+            const order = computeOrder();
+            if (order.lines.length === 0) return;
+            if (order.total === 0) {
+                // Free order: no card needed
+                processPayment(order, null);
+                return;
+            }
+            $('modalTotal').textContent = money(order.total);
+            $('payBtnAmount').textContent = money(order.total);
+            $('cardError').classList.add('hidden');
+            showStep('stepForm');
+            $('payModal').classList.remove('hidden');
+            $('cardName').focus();
+        }
+
+        function closePayModal() {
+            if (!$('stepProcessing').classList.contains('hidden')) return; // don't close mid-payment
+            $('payModal').classList.add('hidden');
+            $('cardForm').reset();
+            $('cardBrand').textContent = '';
+        }
+
+        async function processPayment(order, card) {
+            $('payModal').classList.remove('hidden');
+            showStep('stepProcessing');
+
+            // Simulate the processor taking a moment
+            await new Promise(r => setTimeout(r, 1500));
+
+            const now = new Date();
+            const status = card && card.declined ? 'Declined' : 'Approved';
+            const meta = {
+                orderId: makeOrderId(now),
+                date: formatDate(now),
+                paymentMethod: card ? `${card.brand} ending ${card.last4}` : 'None (free order)',
+                transactionId: 'txn_' + randomHex(8),
+                status,
+            };
+            showResult(order, meta);
+        }
+
+        function showResult(order, meta) {
+            const ok = meta.status === 'Approved';
+            $('resultIcon').className = 'w-16 h-16 rounded-full mx-auto flex items-center justify-center text-3xl mb-4 ' +
+                (ok ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600');
+            $('resultIcon').innerHTML = ok ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>';
+            $('resultTitle').textContent = ok ? 'Payment Successful!' : 'Payment Declined';
+            $('resultText').textContent = ok
+                ? 'Thank you! Your tickets are confirmed. Please keep your order ID for entry.'
+                : 'Your card was declined. No money was charged. Please try a different card.';
+
+            const rows = [
+                ['Order ID', meta.orderId],
+                ['Transaction ID', meta.transactionId],
+                ['Date', meta.date],
+                ['Tickets', order.lines.map(l => `${l.quantity} × ${l.ticket.name}`).join(', ')],
+                ['Payment', meta.paymentMethod],
+                ['Total', ok ? money(order.total) : '$0.00'],
+            ];
+            const receipt = $('receipt');
+            receipt.innerHTML = '';
+            rows.forEach(([k, v]) => {
+                const div = document.createElement('div');
+                div.className = 'flex justify-between gap-4';
+                const dt = document.createElement('dt'); dt.className = 'text-slate-500'; dt.textContent = k;
+                const dd = document.createElement('dd'); dd.className = 'font-semibold text-right break-all'; dd.textContent = v;
+                div.append(dt, dd);
+                receipt.appendChild(div);
+            });
+
+            $('resultBtn').textContent = ok ? 'Done' : 'Try Again';
+            $('resultBtn').onclick = () => {
+                if (ok) {
+                    resetOrder();
+                    closePayModal();
+                } else {
+                    $('cardNumber').value = '';
+                    $('cardBrand').textContent = '';
+                    showStep('stepForm');
+                }
+            };
+            showStep('stepResult');
+        }
+
+        function resetOrder() {
+            TICKETS.forEach(t => { qty[t.id] = 0; $('qty-' + t.id).textContent = '0'; });
+            appliedCode = null;
+            $('discountInput').value = '';
+            $('discountMsg').textContent = '';
+            $('donationInput').value = '';
+            updateSummary();
+        }
+
+        $('cardForm').addEventListener('submit', e => {
+            e.preventDefault();
+            const result = validateCard();
+            if (result.error) {
+                $('cardError').textContent = result.error;
+                $('cardError').classList.remove('hidden');
+                return;
+            }
+            $('cardError').classList.add('hidden');
+            processPayment(computeOrder(), result);
+        });
+
+        // =====================================================================
+        // WIRING
+        // =====================================================================
+        $('payBtn').addEventListener('click', openPayModal);
+        $('applyDiscountBtn').addEventListener('click', applyDiscount);
+        $('discountInput').addEventListener('keydown', e => { if (e.key === 'Enter') applyDiscount(); });
+        $('donationInput').addEventListener('input', updateSummary);
+        $('closePayBtn').addEventListener('click', closePayModal);
+        $('payModal').addEventListener('click', e => { if (e.target.id === 'payModal') closePayModal(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closePayModal(); });
+
+        // On page render
+        renderTicketList();
+        updateSummary();
+    </script>
+</body>
+</html>
