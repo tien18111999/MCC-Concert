@@ -90,6 +90,16 @@
                 <h2 class="text-xl font-extrabold text-mcc-navy mb-1">Choose Your Tickets</h2>
                 <p class="text-sm text-slate-500 mb-5">Select how many of each ticket you need (max 10 per type).</p>
                 <div id="ticketList" class="divide-y divide-slate-100"></div>
+
+                <!-- Notes: handled at the festival entrance, not sold online -->
+                <div class="mt-5 rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm text-slate-700">
+                    <p class="font-bold text-mcc-navy mb-2"><i class="fas fa-info-circle text-amber-500 mr-1"></i> Please note</p>
+                    <ul class="space-y-1.5 list-disc pl-5">
+                        <li><strong>Kids under 12</strong> get in free. No ticket needed; age is verified at the entrance.</li>
+                        <li><strong>Volunteers</strong> get in free. No ticket needed; check in with festival staff at the entrance.</li>
+                        <li><strong>At the door</strong> tickets are $12, available at the gate on festival day. Buy online to save.</li>
+                    </ul>
+                </div>
             </div>
 
             <!-- Order summary -->
@@ -141,14 +151,14 @@
                         Do kids need a ticket?
                         <i class="fas fa-chevron-down text-xs text-slate-400 group-open:rotate-180 transition"></i>
                     </summary>
-                    <p class="text-sm text-slate-600 mt-3">Children under 12 get in free, but please add an "Under 12" ticket to your order so we can plan for everyone.</p>
+                    <p class="text-sm text-slate-600 mt-3">No. Children under 12 get in free and don't need a ticket. Their age is verified at the festival entrance.</p>
                 </details>
                 <details class="bg-white rounded-xl border border-slate-200 p-5 group">
                     <summary class="font-semibold text-mcc-navy cursor-pointer list-none flex justify-between items-center">
                         Are volunteers free?
                         <i class="fas fa-chevron-down text-xs text-slate-400 group-open:rotate-180 transition"></i>
                     </summary>
-                    <p class="text-sm text-slate-600 mt-3">Yes. Registered volunteers get free entry. Not signed up yet? <a href="index.html#volunteer" class="text-mcc-red underline">Become a volunteer</a>.</p>
+                    <p class="text-sm text-slate-600 mt-3">Yes. Registered volunteers get free entry and don't need a ticket; just check in with staff at the entrance. Not signed up yet? <a href="index.html#volunteer" class="text-mcc-red underline">Become a volunteer</a>.</p>
                 </details>
                 <details class="bg-white rounded-xl border border-slate-200 p-5 group">
                     <summary class="font-semibold text-mcc-navy cursor-pointer list-none flex justify-between items-center">
@@ -256,10 +266,7 @@
         const TICKETS = [
             { id: 'early',     name: 'Early Bird',        price: 800,  note: 'Limited-time online price' },
             { id: 'general',   name: 'General Admission', price: 1000, note: 'Standard festival entry' },
-            { id: 'door',      name: 'At the Door',       price: 1200, note: 'Price for tickets bought at the gate on festival day' },
             { id: 'senior',    name: 'Senior',            price: 800,  note: 'For senior guests' },
-            { id: 'child',     name: 'Under 12',          price: 0,    note: 'Kids 11 and under get in free' },
-            { id: 'volunteer', name: 'Volunteer',         price: 0,    note: 'For registered festival volunteers' },
         ];
         const MAX_PER_TYPE = 10;
 
