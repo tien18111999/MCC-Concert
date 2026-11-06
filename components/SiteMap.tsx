@@ -44,7 +44,7 @@ export function SiteMap() {
 
         <ul className="mt-6 grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
           {mapZones.map((zone) => (
-            <li key={zone.name} className="flex items-center gap-2 text-white/75">
+            <li key={zone.name} className="flex min-w-0 items-center gap-2 text-white/75">
               <span
                 className="h-3 w-3 shrink-0 rounded-sm"
                 style={{ backgroundColor: zone.color }}

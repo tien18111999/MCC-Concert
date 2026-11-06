@@ -7,7 +7,7 @@ export function About() {
         <p className="text-sm font-semibold uppercase tracking-[0.35em] text-white/80">
           What is MCC Turn It Up?
         </p>
-        <h2 className="mx-auto mt-6 max-w-4xl font-display text-5xl leading-[0.9] text-white sm:text-7xl">
+        <h2 className="mx-auto mt-6 max-w-4xl text-balance font-display text-[clamp(2.4rem,8vw,4.5rem)] leading-[0.9] text-white">
           One day of live music and community under the Chicago skyline
         </h2>
         <p className="mx-auto mt-8 max-w-3xl text-base leading-relaxed text-white/75 sm:text-lg">

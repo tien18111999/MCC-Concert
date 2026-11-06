@@ -8,6 +8,11 @@ export function Sponsorships() {
           Sponsorships
         </h2>
         <p className="mt-3 text-center text-sm text-white/50">Partner logos coming soon.</p>
+        <p className="mt-4 text-center">
+          <a href="/sponsorships" className="text-sm font-semibold text-[#ff7ac6] hover:text-white">
+            View sponsorship packages
+          </a>
+        </p>
         <ul className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {slots.map((slot) => (
             <li
