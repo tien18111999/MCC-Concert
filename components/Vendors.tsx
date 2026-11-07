@@ -7,9 +7,9 @@ export function Vendors() {
         <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[#ff7ac6]">
           On site
         </p>
-        <h2 className="mt-3 font-display text-5xl leading-none text-white sm:text-6xl">
+        <h1 className="mt-3 font-display text-5xl leading-none text-white sm:text-6xl">
           Vendors & partners
-        </h2>
+        </h1>
         <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-white/65 sm:text-base">
           A hand-picked set of 5–6 local food trucks, beverage stations, and merchandise booths.
           The lineup will be announced here.

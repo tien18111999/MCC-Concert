@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { CopyHandle } from "@/components/CopyHandle";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { Sponsorships } from "@/components/Sponsorships";
 import { event } from "@/lib/content";
 import { INSTAGRAM_URL } from "@/lib/links";
 
@@ -208,6 +209,7 @@ export default function SponsorshipPage() {
             </div>
           </div>
         </section>
+        <Sponsorships />
       </main>
       <Footer />
     </>

@@ -8,9 +8,9 @@ export function SiteMap() {
           <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[#ff7ac6]">
             Event layout
           </p>
-          <h2 className="mt-3 font-display text-5xl leading-none text-white sm:text-6xl">
+          <h1 className="mt-3 font-display text-5xl leading-none text-white sm:text-6xl">
             Festival site map
-          </h2>
+          </h1>
           <p className="mt-4 text-sm leading-relaxed text-white/60">
             {event.place} — southeast sports fields, next to the fieldhouse ({event.address})
           </p>

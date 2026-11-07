@@ -73,10 +73,87 @@ export async function listSignups(): Promise<WaitlistEntry[]> {
 }
 
 export async function clearSignups() {
-  let cursor: string | undefined;
+  await clearPrefix("waitlist/");
+}
 
+export type VolunteerEntry = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  affiliation: string;
+  studentId: string;
+  created_at: string;
+};
+
+const affiliations = new Set([
+  "Current MCC Student",
+  "MCC Alumni",
+  "Faculty / Staff",
+  "External / Community Volunteer",
+]);
+
+export function isVolunteerAffiliation(value: string) {
+  return affiliations.has(value);
+}
+
+export async function insertVolunteer(entry: Omit<VolunteerEntry, "id" | "created_at">) {
+  const record: VolunteerEntry = {
+    ...entry,
+    id: crypto.randomUUID(),
+    created_at: new Date().toISOString(),
+  };
+  const pathname = `volunteers/${createHash("sha256").update(entry.email).digest("hex")}.json`;
+  try {
+    await put(pathname, JSON.stringify(record), {
+      access: "private",
+      addRandomSuffix: false,
+      allowOverwrite: false,
+      contentType: "application/json",
+    });
+  } catch (error) {
+    if (isDuplicate(error)) throw new Error("UNIQUE constraint failed");
+    throw error;
+  }
+}
+
+export async function listVolunteers(): Promise<VolunteerEntry[]> {
+  const entries: VolunteerEntry[] = [];
+  let cursor: string | undefined;
   do {
-    const page = await list({ prefix: "waitlist/", cursor, limit: 1000 });
+    const page = await list({ prefix: "volunteers/", cursor, limit: 1000 });
+    const rows = await Promise.all(
+      page.blobs.map(async (blob) => {
+        const result = await get(blob.url, { access: "private" });
+        if (!result || result.statusCode !== 200) return null;
+        const parsed = JSON.parse(await new Response(result.stream).text()) as VolunteerEntry;
+        return {
+          id: String(parsed.id),
+          name: String(parsed.name),
+          email: String(parsed.email),
+          phone: String(parsed.phone),
+          affiliation: String(parsed.affiliation),
+          studentId: String(parsed.studentId ?? ""),
+          created_at: String(parsed.created_at),
+        };
+      }),
+    );
+    for (const row of rows) {
+      if (row) entries.push(row);
+    }
+    cursor = page.hasMore ? page.cursor : undefined;
+  } while (cursor);
+  return entries.sort((a, b) => b.created_at.localeCompare(a.created_at));
+}
+
+export async function clearVolunteers() {
+  await clearPrefix("volunteers/");
+}
+
+async function clearPrefix(prefix: string) {
+  let cursor: string | undefined;
+  do {
+    const page = await list({ prefix, cursor, limit: 1000 });
     if (page.blobs.length > 0) {
       await del(page.blobs.map((blob) => blob.url));
     }

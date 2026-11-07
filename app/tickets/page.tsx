@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { Sponsorships } from "@/components/Sponsorships";
 import { TicketDesk } from "@/components/TicketDesk";
 
 export const metadata: Metadata = {
@@ -14,6 +15,7 @@ export default function TicketsPage() {
       <Header solid />
       <main className="bg-black">
         <TicketDesk />
+        <Sponsorships />
       </main>
       <Footer />
     </>

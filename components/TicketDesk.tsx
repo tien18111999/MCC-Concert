@@ -291,7 +291,7 @@ export function TicketDesk() {
           </Faq>
           <Faq q="Are volunteers free?">
             Yes. Registered volunteers get free entry and don&apos;t need a ticket; just check in with staff at the entrance.{" "}
-            <a className="text-[#ff7ac6] underline" href="/#volunteer">Become a volunteer</a>.
+            <a className="text-[#ff7ac6] underline" href="/volunteer">Become a volunteer</a>.
           </Faq>
           <Faq q="Will alcohol be served?">
             There is a fenced 21+ Beer Area on site. Please bring a valid ID.

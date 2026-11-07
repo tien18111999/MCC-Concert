@@ -1,9 +1,12 @@
 "use client";
 
+import type { MouseEvent, ReactNode } from "react";
 import { SPONSORSHIP_URL, TICKETS_URL } from "@/lib/links";
 import { useSite } from "@/components/SiteProvider";
 
-const targets = {
+type Target = { href: string; empty: string };
+
+const targets: Record<"tickets" | "sponsorship", Target> = {
   tickets: {
     href: TICKETS_URL,
     empty: "The ticket page link will be added soon.",
@@ -12,7 +15,7 @@ const targets = {
     href: SPONSORSHIP_URL,
     empty: "The sponsorship page link will be added soon.",
   },
-} as const;
+};
 
 export function JoinButton({
   className,
@@ -20,7 +23,7 @@ export function JoinButton({
   onClick,
 }: {
   className?: string;
-  children: React.ReactNode;
+  children: ReactNode;
   onClick?: () => void;
 }) {
   const { openWaitlist } = useSite();
@@ -46,8 +49,8 @@ export function ExternalButton({
 }: {
   kind: keyof typeof targets;
   className?: string;
-  children: React.ReactNode;
-  onClick?: () => void;
+  children: ReactNode;
+  onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
 }) {
   const { notify } = useSite();
   const target = targets[kind];
@@ -64,10 +67,7 @@ export function ExternalButton({
     <button
       type="button"
       className={className}
-      onClick={() => {
-        onClick?.();
-        notify(target.empty);
-      }}
+      onClick={() => notify(target.empty)}
     >
       {children}
     </button>

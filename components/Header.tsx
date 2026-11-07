@@ -1,13 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
+import { useRouter } from "next/navigation";
 import { ExternalButton } from "@/components/Actions";
 import { event } from "@/lib/content";
-import { navItems } from "@/lib/links";
+import { navItems, TICKETS_URL } from "@/lib/links";
 import { solidButtonClass } from "@/lib/styles";
 
 export function Header({ solid = false }: { solid?: boolean }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+
+  function follow(click: MouseEvent, href: string) {
+    click.preventDefault();
+    setOpen(false);
+    router.push(href);
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -30,10 +38,10 @@ export function Header({ solid = false }: { solid?: boolean }) {
       <header
         className={`pointer-events-none fixed inset-x-0 top-0 z-40 ${solid ? "border-b border-white/10 bg-black/90 backdrop-blur" : ""}`}
       >
-        <div className="pointer-events-auto grid h-16 grid-cols-[2.75rem_minmax(0,1fr)_auto] items-center gap-2 px-2 sm:h-[4.5rem] sm:gap-4 sm:px-5">
+        <div className="pointer-events-auto relative flex h-16 items-center justify-between px-2 sm:h-[4.5rem] sm:px-5">
           <button
             type="button"
-            className="grid h-11 w-11 place-items-center text-white"
+            className="relative z-10 grid h-11 w-11 place-items-center text-white"
             aria-expanded={open}
             aria-label={open ? "Close menu" : "Open menu"}
             onClick={() => setOpen(true)}
@@ -45,17 +53,16 @@ export function Header({ solid = false }: { solid?: boolean }) {
             </span>
           </button>
 
-          <a href="/" className="min-w-0 justify-self-center overflow-hidden text-center">
-            <span className="block font-display leading-none tracking-wide text-white">
-              <span className="block text-[1.35rem] sm:hidden">
-                MCC
-                <span className="mt-0.5 block text-[1.05rem]">Turn It Up</span>
-              </span>
-              <span className="hidden truncate text-3xl sm:block lg:text-4xl">MCC Turn It Up</span>
+          <a
+            href="/"
+            className="absolute left-1/2 top-1/2 z-10 max-w-[46vw] -translate-x-1/2 -translate-y-1/2 text-center sm:max-w-[34vw] xl:max-w-none"
+          >
+            <span className="block font-display text-[clamp(1.05rem,3.1vw,2.35rem)] leading-none tracking-wide text-white">
+              MCC Turn It Up
             </span>
           </a>
 
-          <div className="flex items-center gap-3 sm:gap-5">
+          <div className="relative z-10 flex items-center gap-3 sm:gap-5">
             <div className="hidden text-right text-[11px] font-semibold uppercase leading-snug tracking-[0.14em] text-[#ff7ac6] xl:block">
               <p className="whitespace-nowrap">
                 {event.city}
@@ -111,7 +118,7 @@ export function Header({ solid = false }: { solid?: boolean }) {
                       <a
                         href={item.href}
                         className="block text-lg font-semibold tracking-wide"
-                        onClick={close}
+                        onClick={(click) => follow(click, item.href)}
                       >
                         {item.label}
                       </a>
@@ -119,7 +126,7 @@ export function Header({ solid = false }: { solid?: boolean }) {
                       <ExternalButton
                         kind="tickets"
                         className="block text-left text-lg font-semibold tracking-wide"
-                        onClick={close}
+                        onClick={(click) => follow(click, TICKETS_URL)}
                       >
                         {item.label}
                       </ExternalButton>
@@ -130,7 +137,7 @@ export function Header({ solid = false }: { solid?: boolean }) {
               <ExternalButton
                 kind="tickets"
                 className={`${solidButtonClass} mt-10 w-full py-3.5`}
-                onClick={close}
+                onClick={(click) => follow(click, TICKETS_URL)}
               >
                 Tickets
               </ExternalButton>

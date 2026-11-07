@@ -12,12 +12,12 @@ export type NavItem =
   | { label: string; kind: "tickets" };
 
 export const navItems: NavItem[] = [
-  { label: "Home", href: "/#top", kind: "section" },
-  { label: "Map", href: "/#map", kind: "section" },
-  { label: "Vendor", href: "/#vendors", kind: "section" },
-  { label: "Schedule", href: "/#schedules", kind: "section" },
-  { label: "Lineup", href: "/#lineup", kind: "section" },
+  { label: "Home", href: "/", kind: "section" },
+  { label: "Map", href: "/map", kind: "section" },
+  { label: "Vendor", href: "/vendors", kind: "section" },
+  { label: "Schedule", href: "/schedule", kind: "section" },
+  { label: "Lineup", href: "/lineup", kind: "section" },
   { label: "Tickets", kind: "tickets" },
-  { label: "Volunteer", href: "/#volunteer", kind: "section" },
+  { label: "Volunteer", href: "/volunteer", kind: "section" },
   { label: "Sponsorships", href: "/sponsorships", kind: "section" },
 ];

@@ -13,7 +13,7 @@ export function Footer() {
             Hosted by {event.host}. A neighborhood night of music, food, and the people who live here.
           </p>
           <a href="/staff" className="mt-4 inline-block text-xs text-white/40 underline-offset-2 hover:text-white hover:underline">
-            Staff waitlist portal
+            Staff portal
           </a>
         </div>
         <div>
