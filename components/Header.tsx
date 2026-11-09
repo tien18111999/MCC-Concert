@@ -55,11 +55,14 @@ export function Header({ solid = false }: { solid?: boolean }) {
 
           <a
             href="/"
-            className="absolute left-1/2 top-1/2 z-10 max-w-[46vw] -translate-x-1/2 -translate-y-1/2 text-center sm:max-w-[34vw] xl:max-w-none"
+            aria-label="MCC Turn It Up"
+            className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2"
           >
-            <span className="block font-display text-[clamp(1.05rem,3.1vw,2.35rem)] leading-none tracking-wide text-white">
-              MCC Turn It Up
-            </span>
+            <img
+              src={encodeURI("/extra/Logo Concert.jpg")}
+              alt=""
+              className="h-12 w-12 rounded-full object-cover sm:h-14 sm:w-14"
+            />
           </a>
 
           <div className="relative z-10 flex items-center gap-3 sm:gap-5">
