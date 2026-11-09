@@ -88,7 +88,8 @@
             <!-- Ticket list (rows rendered from TICKETS in the script) -->
             <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg border border-slate-200 p-5 sm:p-7">
                 <h2 class="text-xl font-extrabold text-mcc-navy mb-1">Choose Your Tickets</h2>
-                <p class="text-sm text-slate-500 mb-5">Select how many of each ticket you need (max 10 per type).</p>
+                <p class="text-sm text-slate-500 mb-4">Select how many of each ticket you need (max 10 per type in each order).</p>
+                <p id="saleStatus" class="mb-3 rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-mcc-navy font-medium" aria-live="polite"></p>
                 <div id="ticketList" class="divide-y divide-slate-100"></div>
 
                 <!-- Notes: handled at the festival entrance, not sold online -->
@@ -97,7 +98,7 @@
                     <ul class="space-y-1.5 list-disc pl-5">
                         <li><strong>Kids under 12</strong> get in free. No ticket needed; age is verified at the entrance.</li>
                         <li><strong>Volunteers</strong> get in free. No ticket needed; check in with festival staff at the entrance.</li>
-                        <li><strong>At the door</strong> tickets are $12, available at the gate on festival day. Buy online to save.</li>
+                        <li><strong>At the door</strong> tickets are $18, available at the gate on festival day. Buy online to save.</li>
                     </ul>
                 </div>
             </div>
@@ -146,6 +147,13 @@
         <div class="max-w-3xl mx-auto px-4">
             <h2 class="text-2xl font-bold text-mcc-navy text-center mb-8">Good to Know</h2>
             <div class="space-y-3">
+                <details class="bg-white rounded-xl border border-slate-200 p-5 group">
+                    <summary class="font-semibold text-mcc-navy cursor-pointer list-none flex justify-between items-center">
+                        When can I buy Early Bird or General tickets?
+                        <i class="fas fa-chevron-down text-xs text-slate-400 group-open:rotate-180 transition"></i>
+                    </summary>
+                    <p class="text-sm text-slate-600 mt-3">Early Bird tickets ($8) are sold online from May 12 to May 28, 2027 (one month to two weeks before the festival). General Admission ($15) is sold online from May 29 to June 11. The two are never on sale at the same time. On festival day, tickets are $18 at the gate.</p>
+                </details>
                 <details class="bg-white rounded-xl border border-slate-200 p-5 group">
                     <summary class="font-semibold text-mcc-navy cursor-pointer list-none flex justify-between items-center">
                         Do kids need a ticket?
@@ -262,19 +270,57 @@
         // CONFIGURATION
         // =====================================================================
 
-        // Ticket types. Prices are in cents to avoid rounding errors.
-        const TICKETS = [
-            { id: 'early',     name: 'Early Bird',        price: 800,  note: 'Limited-time online price' },
-            { id: 'general',   name: 'General Admission', price: 1000, note: 'Standard festival entry' },
-            { id: 'senior',    name: 'Senior',            price: 800,  note: 'For senior guests' },
-        ];
-        const MAX_PER_TYPE = 10;
+        // Festival day (local time). All sale windows are calculated from this date.
+        // Note: JavaScript months are 0-based, so 5 = June.
+        const EVENT_DATE = new Date(2027, 5, 12);
 
-        // Discount codes dictionary: CODE -> percentage off the ticket subtotal.
-        // Codes are matched case-insensitively. Add new codes here.
+        const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+        const SALES_OPEN    = new Date(EVENT_DATE.getFullYear(), EVENT_DATE.getMonth() - 1, EVENT_DATE.getDate()); // 1 month before
+        const GENERAL_START = addDays(EVENT_DATE, -14); // 2 weeks before: Early Bird ends, General starts
+        const SALES_CLOSE   = EVENT_DATE;               // online sales end when festival day starts (at the door after that)
+
+        // Ticket types. Prices are in cents to avoid rounding errors.
+        // Each ticket is on sale from `from` (inclusive) until `until` (exclusive),
+        // so Early Bird and General Admission are never available at the same time.
+        const TICKETS = [
+            { id: 'early',   name: 'Early Bird',        price: 800,  from: SALES_OPEN,    until: GENERAL_START, max: 10,   note: 'Limited-time online price' },
+            { id: 'general', name: 'General Admission', price: 1500, from: GENERAL_START, until: SALES_CLOSE,   max: 10,   note: 'Standard festival entry' },
+            { id: 'senior',  name: 'Senior',            price: 0,    from: SALES_OPEN,    until: SALES_CLOSE,   max: 10,   note: 'Free for senior guests' },
+        ];
+        // `max` = most tickets of that type in one order (null = no limit).
+        const clampQty = (t, n) => Math.max(0, t.max == null ? n : Math.min(t.max, n));
+
+        // Discount codes dictionary. Codes are matched case-insensitively. Add new codes here.
+        //   percent:   % off each eligible ticket
+        //   appliesTo: ticket ids the code works on (so MCCVIBES only works once General Admission is on sale)
+        //   limit:     total number of tickets that can be discounted with this code, across all orders
         const DISCOUNT_CODES = {
-            'MCC10': 10,   // example: 10% off
+            'MCCVIBES': { percent: 30, appliesTo: ['general'], limit: 50 },
         };
+
+        // ---------------------------------------------------------------------
+        // Discount usage counter
+        // ---------------------------------------------------------------------
+        // DEMO ONLY: the count is saved in this browser (localStorage), so it survives
+        // page reloads and updates automatically after every successful purchase, but
+        // each browser/device has its own count. To share one count between all buyers,
+        // replace these two functions with calls to a backend/database; nothing else
+        // in the page needs to change.
+        const USAGE_KEY = code => 'mcc-discount-used-' + code;
+
+        function getDiscountUsed(code) {
+            try { return Math.max(0, parseInt(localStorage.getItem(USAGE_KEY(code)), 10) || 0); }
+            catch { return 0; }
+        }
+
+        function addDiscountUsed(code, tickets) {
+            try { localStorage.setItem(USAGE_KEY(code), String(getDiscountUsed(code) + tickets)); }
+            catch { /* storage blocked (e.g. private window): count is not saved */ }
+        }
+
+        function discountRemaining(code) {
+            return Math.max(0, DISCOUNT_CODES[code].limit - getDiscountUsed(code));
+        }
 
         // Simulated card processor fee (like a typical online processor): 2.9% + $0.30 per paid order.
         // This is recorded as the organizer's cost; it is NOT added to the customer's total.
@@ -288,7 +334,7 @@
         // STATE + HELPERS
         // =====================================================================
         const qty = Object.fromEntries(TICKETS.map(t => [t.id, 0]));
-        let appliedCode = null; // { code, percent }
+        let appliedCode = null; // code string, e.g. 'MCCVIBES'
 
         const $ = id => document.getElementById(id);
         const money = cents => '$' + (cents / 100).toFixed(2);
@@ -309,6 +355,44 @@
             return `MCC-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${randomHex(3).toUpperCase()}`;
         }
 
+        const shortDate = d => d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+        const longDate  = d => d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+        // Current date. For testing, add ?date=YYYY-MM-DD to the URL (e.g. tickets.html?date=2027-05-30).
+        function getNow() {
+            const param = new URLSearchParams(location.search).get('date');
+            if (param && /^\d{4}-\d{2}-\d{2}$/.test(param)) {
+                const [y, m, d] = param.split('-').map(Number);
+                return new Date(y, m - 1, d, 12);
+            }
+            return new Date();
+        }
+
+        // 'upcoming', 'onsale' or 'ended'
+        function saleState(t, now = getNow()) {
+            if (now < t.from) return 'upcoming';
+            if (now >= t.until) return 'ended';
+            return 'onsale';
+        }
+        const isOnSale = t => saleState(t) === 'onsale';
+
+        // Banner above the ticket list explaining the current sale phase.
+        function renderSaleStatus() {
+            const now = getNow();
+            const earlyLastDay = shortDate(addDays(GENERAL_START, -1));
+            let text;
+            if (now < SALES_OPEN) {
+                text = `Ticket sales open ${longDate(SALES_OPEN)}. Early Bird ($8) runs ${shortDate(SALES_OPEN)} – ${earlyLastDay}, then General Admission ($15) from ${shortDate(GENERAL_START)}.`;
+            } else if (now < GENERAL_START) {
+                text = `Early Bird pricing is on now until ${earlyLastDay}. General Admission ($15) starts ${shortDate(GENERAL_START)}.`;
+            } else if (now < SALES_CLOSE) {
+                text = `Early Bird has ended. General Admission is on sale online until ${shortDate(addDays(SALES_CLOSE, -1))}.`;
+            } else {
+                text = 'Online ticket sales are closed. Tickets are $18 at the gate on festival day.';
+            }
+            $('saleStatus').textContent = text;
+        }
+
         // =====================================================================
         // TICKET LIST
         // =====================================================================
@@ -316,32 +400,61 @@
             const list = $('ticketList');
             list.innerHTML = '';
             TICKETS.forEach(t => {
+                const state = saleState(t);
+                if (state !== 'onsale') qty[t.id] = 0; // can't keep tickets that are not on sale
+
+                const saleWindow = `${shortDate(t.from)} – ${shortDate(addDays(t.until, -1))}`;
+                const control = state === 'onsale'
+                    ? `<div class="flex items-center border border-slate-300 rounded-lg">
+                            <button type="button" data-id="${t.id}" data-step="-1" class="qty-btn w-9 h-9 text-slate-600 hover:bg-slate-100 rounded-l-lg" aria-label="Remove one ${t.name} ticket">−</button>
+                            <input id="qty-${t.id}" data-id="${t.id}" type="number" inputmode="numeric" min="0" ${t.max == null ? '' : `max="${t.max}"`} step="1" value="${qty[t.id]}" class="qty-input w-12 h-9 text-center font-bold text-sm border-x border-slate-300 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" aria-label="Number of ${t.name} tickets">
+                            <button type="button" data-id="${t.id}" data-step="1" class="qty-btn w-9 h-9 text-slate-600 hover:bg-slate-100 rounded-r-lg" aria-label="Add one ${t.name} ticket">+</button>
+                       </div>`
+                    : `<span class="w-[6.5rem] text-center text-xs font-bold rounded-lg px-2 py-2 bg-slate-100 text-slate-500">
+                            ${state === 'upcoming' ? 'On sale ' + shortDate(t.from) : 'Sale ended'}
+                       </span>`;
+
                 const row = document.createElement('div');
-                row.className = 'py-4 flex items-center justify-between gap-4';
+                row.className = 'py-4 flex items-center justify-between gap-4' + (state === 'onsale' ? '' : ' opacity-60');
                 row.innerHTML = `
                     <div class="min-w-0">
                         <p class="font-bold text-mcc-navy">${t.name}</p>
-                        <p class="text-xs text-slate-500">${t.note}</p>
+                        <p class="text-xs text-slate-500">${t.note} · Online ${saleWindow}</p>
                     </div>
                     <div class="flex items-center gap-4 flex-shrink-0">
                         <span class="font-black text-mcc-navy w-14 text-right">${t.price === 0 ? 'FREE' : money(t.price)}</span>
-                        <div class="flex items-center border border-slate-300 rounded-lg">
-                            <button type="button" data-id="${t.id}" data-step="-1" class="qty-btn w-9 h-9 text-slate-600 hover:bg-slate-100 rounded-l-lg" aria-label="Remove one ${t.name} ticket">−</button>
-                            <span id="qty-${t.id}" class="w-8 text-center font-bold text-sm" aria-live="polite">0</span>
-                            <button type="button" data-id="${t.id}" data-step="1" class="qty-btn w-9 h-9 text-slate-600 hover:bg-slate-100 rounded-r-lg" aria-label="Add one ${t.name} ticket">+</button>
-                        </div>
+                        ${control}
                     </div>`;
                 list.appendChild(row);
             });
+        }
 
-            list.addEventListener('click', e => {
-                const btn = e.target.closest('.qty-btn');
-                if (!btn) return;
-                const id = btn.dataset.id;
-                qty[id] = Math.min(MAX_PER_TYPE, Math.max(0, qty[id] + Number(btn.dataset.step)));
-                $('qty-' + id).textContent = qty[id];
-                updateSummary();
-            });
+        $('ticketList').addEventListener('click', e => {
+            const btn = e.target.closest('.qty-btn');
+            if (!btn) return;
+            const id = btn.dataset.id;
+            const t = TICKETS.find(x => x.id === id);
+            qty[id] = clampQty(t, qty[id] + Number(btn.dataset.step));
+            $('qty-' + id).value = qty[id];
+            updateSummary();
+        });
+
+        // Typing a quantity directly (handy for large General Admission orders).
+        $('ticketList').addEventListener('input', e => {
+            if (!e.target.classList.contains('qty-input')) return;
+            const t = TICKETS.find(x => x.id === e.target.dataset.id);
+            qty[t.id] = clampQty(t, parseInt(e.target.value, 10) || 0);
+            updateSummary();
+        });
+        $('ticketList').addEventListener('change', e => {
+            if (e.target.classList.contains('qty-input')) e.target.value = qty[e.target.dataset.id]; // tidy invalid/over-limit input
+        });
+
+        // Re-checks sale windows (e.g. if the page was left open past a cutoff).
+        function refreshAvailability() {
+            renderSaleStatus();
+            renderTicketList();
+            updateSummary();
         }
 
         // =====================================================================
@@ -354,19 +467,27 @@
         }
 
         // Builds the order: one line per ticket type, with discount applied per line.
+        // The discount only covers eligible tickets, up to the number still left for the code.
         function computeOrder() {
-            const percent = appliedCode ? appliedCode.percent : 0;
-            const lines = TICKETS.filter(t => qty[t.id] > 0).map(t => {
+            const rule = appliedCode ? DISCOUNT_CODES[appliedCode] : null;
+            let remaining = rule ? discountRemaining(appliedCode) : 0;
+
+            const lines = TICKETS.filter(t => qty[t.id] > 0 && isOnSale(t)).map(t => {
                 const gross = t.price * qty[t.id];
-                const discount = Math.round(gross * percent / 100);
-                return { ticket: t, quantity: qty[t.id], gross, discount, net: gross - discount };
+                const eligible = rule && rule.appliesTo.includes(t.id);
+                const discountedQty = eligible ? Math.min(qty[t.id], remaining) : 0;
+                remaining -= discountedQty;
+                const discount = Math.round(t.price * discountedQty * (rule ? rule.percent : 0) / 100);
+                return { ticket: t, quantity: qty[t.id], gross, discountedQty, discount, net: gross - discount };
             });
             const subtotal = lines.reduce((s, l) => s + l.gross, 0);
             const discount = lines.reduce((s, l) => s + l.discount, 0);
+            const discountedQty = lines.reduce((s, l) => s + l.discountedQty, 0);
+            const eligibleQty = rule ? lines.filter(l => rule.appliesTo.includes(l.ticket.id)).reduce((s, l) => s + l.quantity, 0) : 0;
             const donation = getDonationCents();
             const total = subtotal - discount + donation;
             const fee = total > 0 ? Math.round(total * FEE_PERCENT / 100) + FEE_FIXED_CENTS : 0;
-            return { lines, subtotal, discount, donation, total, fee };
+            return { lines, subtotal, discount, discountedQty, eligibleQty, code: appliedCode, donation, total, fee };
         }
 
         function updateSummary() {
@@ -385,6 +506,7 @@
             $('discountAmt').textContent = '−' + money(order.discount);
             $('donationAmt').textContent = money(order.donation);
             $('totalAmt').textContent = money(order.total);
+            renderDiscountMsg(order);
 
             const btn = $('payBtn');
             btn.disabled = order.lines.length === 0;
@@ -394,20 +516,50 @@
         // =====================================================================
         // DISCOUNT CODES
         // =====================================================================
+        function setDiscountMsg(text, ok) {
+            const msg = $('discountMsg');
+            msg.textContent = text;
+            msg.className = 'text-xs mt-1.5 min-h-[1rem] font-medium ' + (ok ? 'text-green-700' : 'text-red-600');
+        }
+
+        function ticketNames(ids) {
+            return ids.map(id => TICKETS.find(t => t.id === id).name).join(', ');
+        }
+
+        // Keeps the message under the code box in sync with the current order.
+        function renderDiscountMsg(order) {
+            if (!order.code) return;
+            const rule = DISCOUNT_CODES[order.code];
+            let text = `Code ${order.code} applied: ${rule.percent}% off ${ticketNames(rule.appliesTo)} tickets.`;
+            if (order.eligibleQty > order.discountedQty) {
+                text += ` Only ${order.discountedQty} of your ${order.eligibleQty} tickets get the discount.`;
+            } else if (order.eligibleQty === 0) {
+                text += ` Add ${ticketNames(rule.appliesTo)} tickets to use it.`;
+            }
+            setDiscountMsg(text, true);
+        }
+
         function applyDiscount() {
             const code = $('discountInput').value.trim().toUpperCase();
-            const msg = $('discountMsg');
+            appliedCode = null;
+
             if (!code) {
-                appliedCode = null;
-                msg.textContent = '';
-            } else if (Object.prototype.hasOwnProperty.call(DISCOUNT_CODES, code)) {
-                appliedCode = { code, percent: DISCOUNT_CODES[code] };
-                msg.textContent = `Code ${code} applied: ${appliedCode.percent}% off tickets.`;
-                msg.className = 'text-xs mt-1.5 min-h-[1rem] text-green-700 font-medium';
+                $('discountMsg').textContent = '';
+            } else if (!Object.prototype.hasOwnProperty.call(DISCOUNT_CODES, code)) {
+                setDiscountMsg('That code is not valid.', false);
             } else {
-                appliedCode = null;
-                msg.textContent = 'That code is not valid.';
-                msg.className = 'text-xs mt-1.5 min-h-[1rem] text-red-600 font-medium';
+                const rule = DISCOUNT_CODES[code];
+                const eligibleOnSale = TICKETS.filter(t => rule.appliesTo.includes(t.id) && isOnSale(t));
+                if (eligibleOnSale.length === 0) {
+                    const first = TICKETS.find(t => rule.appliesTo.includes(t.id));
+                    setDiscountMsg(saleState(first) === 'upcoming'
+                        ? `${code} can be used once ${first.name} goes on sale (${shortDate(first.from)}).`
+                        : `${code} is no longer available.`, false);
+                } else if (discountRemaining(code) === 0) {
+                    setDiscountMsg(`Sorry, all ${rule.limit} ${code} discounts have been used.`, false);
+                } else {
+                    appliedCode = code; // message is written by renderDiscountMsg()
+                }
             }
             updateSummary();
         }
@@ -477,6 +629,7 @@
         }
 
         function openPayModal() {
+            refreshAvailability(); // drop any ticket whose sale window closed while the page was open
             const order = computeOrder();
             if (order.lines.length === 0) return;
             if (order.total === 0) {
@@ -515,6 +668,10 @@
                 transactionId: 'txn_' + randomHex(8),
                 status,
             };
+            // Count discounted tickets only when the purchase goes through.
+            if (status === 'Approved' && order.code && order.discountedQty > 0) {
+                addDiscountUsed(order.code, order.discountedQty);
+            }
             showResult(order, meta);
         }
 
@@ -533,6 +690,9 @@
                 ['Transaction ID', meta.transactionId],
                 ['Date', meta.date],
                 ['Tickets', order.lines.map(l => `${l.quantity} × ${l.ticket.name}`).join(', ')],
+                ...(order.discountedQty > 0
+                    ? [['Discount', `${order.code}: −${money(order.discount)} (${order.discountedQty} ticket${order.discountedQty === 1 ? '' : 's'})`]]
+                    : []),
                 ['Payment', meta.paymentMethod],
                 ['Total', ok ? money(order.total) : '$0.00'],
             ];
@@ -562,7 +722,7 @@
         }
 
         function resetOrder() {
-            TICKETS.forEach(t => { qty[t.id] = 0; $('qty-' + t.id).textContent = '0'; });
+            TICKETS.forEach(t => { qty[t.id] = 0; const el = $('qty-' + t.id); if (el) el.value = '0'; });
             appliedCode = null;
             $('discountInput').value = '';
             $('discountMsg').textContent = '';
@@ -594,8 +754,7 @@
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closePayModal(); });
 
         // On page render
-        renderTicketList();
-        updateSummary();
+        refreshAvailability();
     </script>
 </body>
 </html>
