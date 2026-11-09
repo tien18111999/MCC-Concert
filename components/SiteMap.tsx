@@ -65,14 +65,11 @@ export function SiteMap() {
               <p className="mt-1 text-white/55">Last bus leaves the park at 9:32 PM.</p>
             </li>
           </ul>
-          <a
-            href={tripPlanner}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-6 inline-flex rounded-full bg-[#ff2d95] px-5 py-3 text-sm font-semibold text-white hover:bg-[#ff4aa8]"
-          >
-            Open the trip planner
-          </a>
+          <iframe
+            title="Plan your trip to the festival"
+            src={tripPlanner}
+            className="mt-6 h-[1100px] w-full rounded-2xl border border-white/10 bg-[#17131c] sm:h-[1280px]"
+          />
         </div>
       </div>
     </section>
