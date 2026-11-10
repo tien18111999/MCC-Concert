@@ -51,18 +51,11 @@ export const stats = [
 ];
 
 export const schedule = [
-  {
-    time: "TBA",
-    title: "Opening Ceremony & Local Bands",
-    note: "Schedule coming soon",
-    tag: "Coming soon",
-  },
-  {
-    time: "TBA",
-    title: "Glow & Groove Dance Party Finale",
-    note: "Schedule coming soon",
-    tag: "Finale",
-  },
+  { time: "12:15 PM – 1:15 PM", title: "Leonardo Music" },
+  { time: "1:45 PM – 2:45 PM", title: "Michael Joseph" },
+  { time: "3:15 PM – 4:15 PM", title: "The Grady Experience" },
+  { time: "4:45 PM – 5:45 PM", title: "Zørila" },
+  { time: "6:15 PM – 7:45 PM", title: "Derrick Carter" },
 ];
 
 export const mapZones = [

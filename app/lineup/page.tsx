@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
-import { Lineup } from "@/components/Lineup";
 import { PageFrame } from "@/components/PageFrame";
+import { Schedule } from "@/components/Schedule";
 
 export const metadata: Metadata = {
-  title: "Lineup | MCC Turn It Up",
-  description: "Artists for MCC Turn It Up. Local bands, musicians, and the closing DJ.",
+  title: "Lineup & Schedule | MCC Turn It Up",
+  description: "Artist lineup and set times for MCC Turn It Up at Columbus Park.",
 };
 
 export default function LineupPage() {
   return (
     <PageFrame>
-      <Lineup />
+      <Schedule />
     </PageFrame>
   );
 }
