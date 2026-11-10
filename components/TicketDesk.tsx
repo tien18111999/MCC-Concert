@@ -1,13 +1,20 @@
 "use client";
 
-import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { event } from "@/lib/content";
 import { solidButtonClass } from "@/lib/styles";
 import {
   DISCOUNT_CODES,
   MAX_PER_TYPE,
+  addDiscountUsed,
   cardBrand,
+  computeOrder,
+  getDiscountUsed,
   money,
+  parseTestDate,
+  saleState,
+  saleStatus,
+  shortDate,
   tickets,
   validateCard,
   type TicketId,
@@ -21,6 +28,7 @@ type Receipt = {
   date: string;
   payment: string;
   tickets: string;
+  discount: string;
   total: string;
 };
 
@@ -52,33 +60,54 @@ export function TicketDesk() {
   const [card, setCard] = useState({ name: "", number: "", expiry: "", cvc: "" });
   const [cardError, setCardError] = useState("");
   const [receipt, setReceipt] = useState<Receipt | null>(null);
+  const [now, setNow] = useState(() => new Date());
+  const [used, setUsed] = useState<Record<string, number>>({});
 
-  const order = useMemo(() => {
-    const percent = applied?.percent ?? 0;
-    const lines = tickets
-      .filter((ticket) => qty[ticket.id] > 0)
-      .map((ticket) => {
-        const gross = ticket.price * qty[ticket.id];
-        const discount = Math.round((gross * percent) / 100);
-        return { ticket, quantity: qty[ticket.id], net: gross - discount };
-      });
-    const subtotal = lines.reduce((sum, line) => sum + line.ticket.price * line.quantity, 0);
-    const discount = lines.reduce((sum, line) => sum + line.ticket.price * line.quantity - line.net, 0);
-    const donationCents = (() => {
-      const value = Number.parseFloat(donation);
-      if (!Number.isFinite(value) || value <= 0) return 0;
-      return Math.round(Math.min(value, 1000) * 100);
-    })();
-    return {
-      lines,
-      subtotal,
-      discount,
-      donation: donationCents,
-      total: subtotal - discount + donationCents,
-    };
-  }, [applied, donation, qty]);
+  useEffect(() => {
+    const testDate = parseTestDate(new URLSearchParams(window.location.search).get("date"));
+    if (testDate) setNow(testDate);
+    const counts: Record<string, number> = {};
+    for (const code of Object.keys(DISCOUNT_CODES)) counts[code] = getDiscountUsed(code);
+    setUsed(counts);
+  }, []);
+
+  const donationCents = useMemo(() => {
+    const value = Number.parseFloat(donation);
+    if (!Number.isFinite(value) || value <= 0) return 0;
+    return Math.round(Math.min(value, 1000) * 100);
+  }, [donation]);
+
+  const order = useMemo(
+    () =>
+      computeOrder({
+        qty,
+        code: applied?.code ?? null,
+        used: applied ? (used[applied.code] ?? 0) : 0,
+        donationCents,
+        now,
+      }),
+    [applied, donationCents, now, qty, used],
+  );
+
+  const codeNotice = useMemo(() => {
+    if (!applied) return codeMessage;
+    const rule = DISCOUNT_CODES[applied.code];
+    const names = rule.appliesTo
+      .map((id) => tickets.find((ticket) => ticket.id === id)?.name)
+      .filter(Boolean)
+      .join(", ");
+    let text = `Code ${applied.code} applied: ${rule.percent}% off ${names} tickets.`;
+    if (order.eligibleQty > order.discountedQty) {
+      text += ` Only ${order.discountedQty} of your ${order.eligibleQty} tickets get the discount.`;
+    } else if (order.eligibleQty === 0) {
+      text += ` Add ${names} tickets to use it.`;
+    }
+    return text;
+  }, [applied, codeMessage, order.discountedQty, order.eligibleQty]);
 
   const setCount = (id: TicketId, next: number) => {
+    const ticket = tickets.find((item) => item.id === id);
+    if (!ticket || saleState(ticket, now) !== "onsale") return;
     setQty((current) => ({ ...current, [id]: Math.max(0, Math.min(MAX_PER_TYPE, next)) }));
   };
 
@@ -89,15 +118,34 @@ export function TicketDesk() {
       setCodeMessage("");
       return;
     }
-    if (Object.prototype.hasOwnProperty.call(DISCOUNT_CODES, code)) {
-      setApplied({ code, percent: DISCOUNT_CODES[code] });
-      setCodeOk(true);
-      setCodeMessage(`Code ${code} applied: ${DISCOUNT_CODES[code]}% off tickets.`);
+    if (!Object.prototype.hasOwnProperty.call(DISCOUNT_CODES, code)) {
+      setApplied(null);
+      setCodeOk(false);
+      setCodeMessage("That code is not valid.");
       return;
     }
-    setApplied(null);
-    setCodeOk(false);
-    setCodeMessage("That code is not valid.");
+    const rule = DISCOUNT_CODES[code];
+    const onSale = tickets.some((ticket) => rule.appliesTo.includes(ticket.id) && saleState(ticket, now) === "onsale");
+    if (!onSale) {
+      const first = tickets.find((ticket) => rule.appliesTo.includes(ticket.id));
+      setApplied(null);
+      setCodeOk(false);
+      setCodeMessage(
+        first && saleState(first, now) === "upcoming"
+          ? `${code} can be used once ${first.name} goes on sale (${shortDate(first.from)}).`
+          : `${code} is no longer available.`,
+      );
+      return;
+    }
+    if (rule.limit - (used[code] ?? 0) <= 0) {
+      setApplied(null);
+      setCodeOk(false);
+      setCodeMessage(`Sorry, all ${rule.limit} ${code} discounts have been used.`);
+      return;
+    }
+    setApplied({ code, percent: rule.percent });
+    setCodeOk(true);
+    setCodeMessage("");
   };
 
   const reset = () => {
@@ -119,8 +167,19 @@ export function TicketDesk() {
       date: formatDate(now),
       payment: paidWithCard ? `${paidWithCard.brand} ending ${paidWithCard.last4}` : "None (free order)",
       tickets: order.lines.map((line) => `${line.quantity} × ${line.ticket.name}`).join(", "),
+      discount:
+        order.discountedQty > 0 && applied
+          ? `${applied.code}: −${money(order.discount)} (${order.discountedQty} ticket${order.discountedQty === 1 ? "" : "s"})`
+          : "",
       total: ok ? money(order.total) : money(0),
     });
+    if (ok && applied && order.discountedQty > 0) {
+      addDiscountUsed(applied.code, order.discountedQty);
+      setUsed((current) => ({
+        ...current,
+        [applied.code]: (current[applied.code] ?? 0) + order.discountedQty,
+      }));
+    }
     setStep("result");
     if (ok) reset();
   };
@@ -174,44 +233,57 @@ export function TicketDesk() {
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-7">
           <h2 className="font-display text-4xl">Choose your tickets</h2>
           <p className="mt-1 text-sm text-white/50">Select how many of each ticket you need (max 10 per type).</p>
-          <ul className="mt-6 divide-y divide-white/10">
-            {tickets.map((ticket) => (
-              <li key={ticket.id} className="flex flex-wrap items-center justify-between gap-4 py-5">
-                <div>
-                  <p className="text-lg font-semibold">{ticket.name}</p>
-                  <p className="text-sm text-white/50">{ticket.note}</p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <p className="font-display text-3xl text-[#ff7ac6]">{money(ticket.price)}</p>
-                  <div className="flex items-center rounded-full border border-white/15">
-                    <button
-                      type="button"
-                      className="h-10 w-10 text-lg"
-                      aria-label={`Remove one ${ticket.name}`}
-                      onClick={() => setCount(ticket.id, qty[ticket.id] - 1)}
-                    >
-                      −
-                    </button>
-                    <span className="w-6 text-center text-sm font-semibold">{qty[ticket.id]}</span>
-                    <button
-                      type="button"
-                      className="h-10 w-10 text-lg"
-                      aria-label={`Add one ${ticket.name}`}
-                      onClick={() => setCount(ticket.id, qty[ticket.id] + 1)}
-                    >
-                      +
-                    </button>
+          <p className="mt-4 rounded-xl border border-sky-300/30 bg-sky-400/10 px-4 py-3 text-sm text-white/85">{saleStatus(now)}</p>
+          <ul className="mt-2 divide-y divide-white/10">
+            {tickets.map((ticket) => {
+              const state = saleState(ticket, now);
+              const windowLabel = `Online ${shortDate(ticket.from)} – ${shortDate(new Date(ticket.until.getFullYear(), ticket.until.getMonth(), ticket.until.getDate() - 1))}`;
+              return (
+                <li key={ticket.id} className={`flex flex-wrap items-center justify-between gap-4 py-5 ${state === "onsale" ? "" : "opacity-60"}`}>
+                  <div>
+                    <p className="text-lg font-semibold">{ticket.name}</p>
+                    <p className="text-sm text-white/50">
+                      {ticket.note} · {windowLabel}
+                    </p>
                   </div>
-                </div>
-              </li>
-            ))}
+                  <div className="flex items-center gap-4">
+                    <p className="font-display text-3xl text-[#ff7ac6]">{ticket.price === 0 ? "Free" : money(ticket.price)}</p>
+                    {state === "onsale" ? (
+                      <div className="flex items-center rounded-full border border-white/15">
+                        <button
+                          type="button"
+                          className="h-10 w-10 text-lg"
+                          aria-label={`Remove one ${ticket.name}`}
+                          onClick={() => setCount(ticket.id, qty[ticket.id] - 1)}
+                        >
+                          −
+                        </button>
+                        <span className="w-6 text-center text-sm font-semibold">{qty[ticket.id]}</span>
+                        <button
+                          type="button"
+                          className="h-10 w-10 text-lg"
+                          aria-label={`Add one ${ticket.name}`}
+                          onClick={() => setCount(ticket.id, qty[ticket.id] + 1)}
+                        >
+                          +
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="rounded-full bg-white/10 px-3 py-2 text-center text-xs font-bold text-white/55">
+                        {state === "upcoming" ? `On sale ${shortDate(ticket.from)}` : "Sale ended"}
+                      </span>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
           <div className="mt-4 rounded-xl border border-[#ffc857]/30 bg-[#ffc857]/10 p-4 text-sm text-white/80">
             <p className="font-semibold text-white">Please note</p>
             <ul className="mt-2 list-disc space-y-1 pl-5">
               <li>Kids under 12 get in free. No ticket needed; age is verified at the entrance.</li>
               <li>Volunteers get in free. No ticket needed; check in with festival staff at the entrance.</li>
-              <li>At the door tickets are $12, available at the gate on festival day. Buy online to save.</li>
+              <li>At the door tickets are $18, available at the gate on festival day. Buy online to save.</li>
             </ul>
           </div>
         </div>
@@ -227,7 +299,7 @@ export function TicketDesk() {
                   <span>
                     {line.quantity} × {line.ticket.name}
                   </span>
-                  <span>{money(line.net)}</span>
+                  <span>{line.gross === 0 ? "Free" : money(line.gross)}</span>
                 </p>
               ))
             )}
@@ -250,7 +322,7 @@ export function TicketDesk() {
               Apply
             </button>
           </div>
-          <p className={`mt-1.5 min-h-4 text-xs ${codeOk ? "text-emerald-300" : "text-rose-300"}`}>{codeMessage}</p>
+          <p className={`mt-1.5 min-h-4 text-xs ${applied || codeOk ? "text-emerald-300" : "text-rose-300"}`}>{codeNotice}</p>
           <label htmlFor="donation" className="mt-3 block text-xs font-semibold uppercase tracking-wide text-white/55">
             Add a donation to the community fund (optional)
           </label>
@@ -286,6 +358,9 @@ export function TicketDesk() {
       <section className="mx-auto max-w-3xl px-5 pb-20 sm:px-8">
         <h2 className="text-center font-display text-5xl">Good to know</h2>
         <div className="mt-6 space-y-3">
+          <Faq q="When can I buy Early Bird or General tickets?">
+            Early Bird tickets ($8) are sold online from May 12 to May 28, 2027. General Admission ($15) is sold online from May 29 to June 11. The two are never on sale at the same time. Seniors are free during the online sale. On festival day, tickets are $18 at the gate. Code MCCVIBES takes 30% off General Admission for the first 50 tickets.
+          </Faq>
           <Faq q="Do kids need a ticket?">
             No. Children under 12 get in free and don&apos;t need a ticket. Their age is verified at the festival entrance.
           </Faq>
@@ -389,6 +464,7 @@ export function TicketDesk() {
                   <ReceiptRow k="Transaction ID" v={receipt.transactionId} />
                   <ReceiptRow k="Date" v={receipt.date} />
                   <ReceiptRow k="Tickets" v={receipt.tickets} />
+                  {receipt.discount ? <ReceiptRow k="Discount" v={receipt.discount} /> : null}
                   <ReceiptRow k="Payment" v={receipt.payment} />
                   <ReceiptRow k="Total" v={receipt.total} />
                 </dl>
