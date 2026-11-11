@@ -44,8 +44,6 @@ export const DISCOUNT_CODES: Record<string, DiscountRule> = {
 
 export const DECLINE_TEST_CARD = "4000000000000002";
 
-const USAGE_PREFIX = "mcc-discount-used-";
-
 export function money(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
@@ -88,22 +86,6 @@ export function saleStatus(now: Date) {
     return `Early Bird has ended. General Admission is on sale online until ${shortDate(addDays(general.until, -1))}.`;
   }
   return "Online ticket sales are closed. Tickets are $18 at the gate on festival day.";
-}
-
-export function getDiscountUsed(code: string) {
-  try {
-    return Math.max(0, Number.parseInt(localStorage.getItem(USAGE_PREFIX + code) || "0", 10) || 0);
-  } catch {
-    return 0;
-  }
-}
-
-export function addDiscountUsed(code: string, count: number) {
-  try {
-    localStorage.setItem(USAGE_PREFIX + code, String(getDiscountUsed(code) + count));
-  } catch {
-    /* Private browsing can block storage. The demo count stays in this tab. */
-  }
 }
 
 export type OrderLine = {

@@ -1,5 +1,5 @@
-import { createHash } from "node:crypto";
-import { del, get, list, put } from "@vercel/blob";
+import { neon } from "@neondatabase/serverless";
+import { DISCOUNT_CODES, MAX_PER_TYPE } from "@/lib/tickets";
 
 export type WaitlistEntry = {
   id: string;
@@ -8,73 +8,6 @@ export type WaitlistEntry = {
   consent: number;
   created_at: string;
 };
-
-function pathnameFor(email: string) {
-  const id = createHash("sha256").update(email).digest("hex");
-  return `waitlist/${id}.json`;
-}
-
-function isDuplicate(error: unknown) {
-  return error instanceof Error && /already exists/i.test(error.message);
-}
-
-export async function insertSignup(name: string, email: string) {
-  const entry: WaitlistEntry = {
-    id: crypto.randomUUID(),
-    name,
-    email,
-    consent: 1,
-    created_at: new Date().toISOString(),
-  };
-
-  try {
-    await put(pathnameFor(email), JSON.stringify(entry), {
-      access: "private",
-      addRandomSuffix: false,
-      allowOverwrite: false,
-      contentType: "application/json",
-    });
-  } catch (error) {
-    if (isDuplicate(error)) {
-      throw new Error("UNIQUE constraint failed");
-    }
-    throw error;
-  }
-}
-
-async function readEntry(url: string) {
-  const result = await get(url, { access: "private" });
-  if (!result || result.statusCode !== 200) return null;
-  const text = await new Response(result.stream).text();
-  const parsed = JSON.parse(text) as WaitlistEntry;
-  return {
-    id: String(parsed.id),
-    name: String(parsed.name),
-    email: String(parsed.email),
-    consent: Number(parsed.consent),
-    created_at: String(parsed.created_at),
-  };
-}
-
-export async function listSignups(): Promise<WaitlistEntry[]> {
-  const entries: WaitlistEntry[] = [];
-  let cursor: string | undefined;
-
-  do {
-    const page = await list({ prefix: "waitlist/", cursor, limit: 1000 });
-    const rows = await Promise.all(page.blobs.map((blob) => readEntry(blob.url)));
-    for (const row of rows) {
-      if (row) entries.push(row);
-    }
-    cursor = page.hasMore ? page.cursor : undefined;
-  } while (cursor);
-
-  return entries.sort((a, b) => b.created_at.localeCompare(a.created_at));
-}
-
-export async function clearSignups() {
-  await clearPrefix("waitlist/");
-}
 
 export type VolunteerEntry = {
   id: string;
@@ -93,70 +26,121 @@ const affiliations = new Set([
   "External / Community Volunteer",
 ]);
 
+function database() {
+  const url = process.env.DATABASE_URL;
+  if (!url) throw new Error("DATABASE_URL is not set");
+  return neon(url);
+}
+
+function isUnique(error: unknown) {
+  return typeof error === "object" && error !== null && "code" in error && error.code === "23505";
+}
+
+function stamp(value: unknown) {
+  if (value instanceof Date) return value.toISOString();
+  return String(value);
+}
+
 export function isVolunteerAffiliation(value: string) {
   return affiliations.has(value);
 }
 
-export async function insertVolunteer(entry: Omit<VolunteerEntry, "id" | "created_at">) {
-  const record: VolunteerEntry = {
-    ...entry,
-    id: crypto.randomUUID(),
-    created_at: new Date().toISOString(),
-  };
-  const pathname = `volunteers/${createHash("sha256").update(entry.email).digest("hex")}.json`;
+export async function insertSignup(name: string, email: string) {
   try {
-    await put(pathname, JSON.stringify(record), {
-      access: "private",
-      addRandomSuffix: false,
-      allowOverwrite: false,
-      contentType: "application/json",
-    });
+    await database()`
+      insert into waitlist (name, email, consent)
+      values (${name}, ${email}, true)
+    `;
   } catch (error) {
-    if (isDuplicate(error)) throw new Error("UNIQUE constraint failed");
+    if (isUnique(error)) throw new Error("UNIQUE constraint failed");
+    throw error;
+  }
+}
+
+export async function listSignups(): Promise<WaitlistEntry[]> {
+  const rows = await database()`
+    select id, name, email, consent, created_at
+    from waitlist
+    order by created_at desc
+  `;
+  return rows.map((row) => ({
+    id: String(row.id),
+    name: String(row.name),
+    email: String(row.email),
+    consent: row.consent ? 1 : 0,
+    created_at: stamp(row.created_at),
+  }));
+}
+
+export async function clearSignups() {
+  await database()`delete from waitlist`;
+}
+
+export async function insertVolunteer(entry: Omit<VolunteerEntry, "id" | "created_at">) {
+  try {
+    await database()`
+      insert into volunteers (name, email, phone, affiliation, student_id)
+      values (${entry.name}, ${entry.email}, ${entry.phone}, ${entry.affiliation}, ${entry.studentId})
+    `;
+  } catch (error) {
+    if (isUnique(error)) throw new Error("UNIQUE constraint failed");
     throw error;
   }
 }
 
 export async function listVolunteers(): Promise<VolunteerEntry[]> {
-  const entries: VolunteerEntry[] = [];
-  let cursor: string | undefined;
-  do {
-    const page = await list({ prefix: "volunteers/", cursor, limit: 1000 });
-    const rows = await Promise.all(
-      page.blobs.map(async (blob) => {
-        const result = await get(blob.url, { access: "private" });
-        if (!result || result.statusCode !== 200) return null;
-        const parsed = JSON.parse(await new Response(result.stream).text()) as VolunteerEntry;
-        return {
-          id: String(parsed.id),
-          name: String(parsed.name),
-          email: String(parsed.email),
-          phone: String(parsed.phone),
-          affiliation: String(parsed.affiliation),
-          studentId: String(parsed.studentId ?? ""),
-          created_at: String(parsed.created_at),
-        };
-      }),
-    );
-    for (const row of rows) {
-      if (row) entries.push(row);
-    }
-    cursor = page.hasMore ? page.cursor : undefined;
-  } while (cursor);
-  return entries.sort((a, b) => b.created_at.localeCompare(a.created_at));
+  const rows = await database()`
+    select id, name, email, phone, affiliation, student_id, created_at
+    from volunteers
+    order by created_at desc
+  `;
+  return rows.map((row) => ({
+    id: String(row.id),
+    name: String(row.name),
+    email: String(row.email),
+    phone: String(row.phone),
+    affiliation: String(row.affiliation),
+    studentId: String(row.student_id ?? ""),
+    created_at: stamp(row.created_at),
+  }));
 }
 
 export async function clearVolunteers() {
-  await clearPrefix("volunteers/");
+  await database()`delete from volunteers`;
 }
 
-async function clearPrefix(prefix: string) {
-  let cursor: string | undefined;
-  do {
-    const page = await list({ prefix, cursor, limit: 1000 });
-    if (page.blobs.length > 0) {
-      await del(page.blobs.map((blob) => blob.url));
-    }
-    cursor = page.hasMore ? page.cursor : undefined;
-  } while (cursor);
+export async function readDiscountUsed(code: string) {
+  const rows = await database()`
+    select tickets_used
+    from discount_uses
+    where code = ${code}
+  `;
+  return Math.max(0, Number(rows[0]?.tickets_used ?? 0));
+}
+
+export async function claimDiscount(code: string, count: number) {
+  const rule = DISCOUNT_CODES[code];
+  if (!rule) return null;
+  const requested = Math.max(0, Math.min(MAX_PER_TYPE, Math.floor(count)));
+  if (requested === 0) {
+    return { used: await readDiscountUsed(code), applied: 0, limit: rule.limit };
+  }
+  const rows = await database()`
+    with before as (
+      select tickets_used from discount_uses where code = ${code}
+    ),
+    upd as (
+      update discount_uses
+      set tickets_used = least(${rule.limit}, tickets_used + ${requested})
+      where code = ${code}
+      returning tickets_used
+    )
+    select upd.tickets_used as used, upd.tickets_used - before.tickets_used as applied
+    from upd, before
+  `;
+  return {
+    used: Number(rows[0]?.used ?? 0),
+    applied: Number(rows[0]?.applied ?? 0),
+    limit: rule.limit,
+  };
 }

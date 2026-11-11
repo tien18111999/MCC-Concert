@@ -6,10 +6,8 @@ import { solidButtonClass } from "@/lib/styles";
 import {
   DISCOUNT_CODES,
   MAX_PER_TYPE,
-  addDiscountUsed,
   cardBrand,
   computeOrder,
-  getDiscountUsed,
   money,
   parseTestDate,
   saleState,
@@ -66,9 +64,17 @@ export function TicketDesk() {
   useEffect(() => {
     const testDate = parseTestDate(new URLSearchParams(window.location.search).get("date"));
     if (testDate) setNow(testDate);
-    const counts: Record<string, number> = {};
-    for (const code of Object.keys(DISCOUNT_CODES)) counts[code] = getDiscountUsed(code);
-    setUsed(counts);
+    const codes = Object.keys(DISCOUNT_CODES);
+    Promise.all(
+      codes.map(async (code) => {
+        const response = await fetch(`/api/discount?code=${code}`);
+        if (!response.ok) return [code, 0] as const;
+        const data = (await response.json()) as { used?: number };
+        return [code, data.used ?? 0] as const;
+      }),
+    )
+      .then((pairs) => setUsed(Object.fromEntries(pairs)))
+      .catch(() => undefined);
   }, []);
 
   const donationCents = useMemo(() => {
@@ -157,9 +163,26 @@ export function TicketDesk() {
     setCard({ name: "", number: "", expiry: "", cvc: "" });
   };
 
-  const finish = (paidWithCard: { brand: string; last4: string; declined: boolean } | null) => {
+  const finish = async (paidWithCard: { brand: string; last4: string; declined: boolean } | null) => {
     const now = new Date();
     const ok = !paidWithCard?.declined;
+    if (ok && applied && order.discountedQty > 0) {
+      try {
+        const response = await fetch("/api/discount", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ code: applied.code, count: order.discountedQty }),
+        });
+        if (response.ok) {
+          const data = (await response.json()) as { used?: number };
+          if (typeof data.used === "number") {
+            setUsed((current) => ({ ...current, [applied.code]: data.used as number }));
+          }
+        }
+      } catch {
+        /* The receipt still shows. The shared count updates on the next successful order. */
+      }
+    }
     setReceipt({
       ok,
       orderId: `MCC-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${randomHex(3).toUpperCase()}`,
@@ -173,13 +196,6 @@ export function TicketDesk() {
           : "",
       total: ok ? money(order.total) : money(0),
     });
-    if (ok && applied && order.discountedQty > 0) {
-      addDiscountUsed(applied.code, order.discountedQty);
-      setUsed((current) => ({
-        ...current,
-        [applied.code]: (current[applied.code] ?? 0) + order.discountedQty,
-      }));
-    }
     setStep("result");
     if (ok) reset();
   };
