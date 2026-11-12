@@ -11,6 +11,11 @@ export function Schedule() {
             {event.date} · {event.time} · {event.place}
           </p>
         </div>
+        <img
+          src="/extra/line%20up%20poster.webp"
+          alt="MCC Turn It Up lineup poster: Leonardo Music, The Grady Experience, Michael Joseph, Zørila, and Derrick Carter. Saturday, June 12, 2027, Columbus Park, Chicago."
+          className="mx-auto mt-10 w-full max-w-md rounded-2xl border border-white/10 shadow-[0_30px_80px_-24px_rgba(255,45,149,0.55)]"
+        />
         <ol className="mt-10 space-y-3">
           {schedule.map((item) => (
             <li
