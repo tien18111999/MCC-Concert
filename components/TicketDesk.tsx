@@ -4,21 +4,25 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "re
 import { event } from "@/lib/content";
 import { solidButtonClass } from "@/lib/styles";
 import {
-  DISCOUNT_CODES,
-  MAX_PER_TYPE,
+  apiHeaders,
   cardBrand,
   computeOrder,
   money,
+  parseDay,
   parseTestDate,
   saleState,
   saleStatus,
   shortDate,
-  tickets,
+  testDateParam,
   validateCard,
-  type TicketId,
+  type AppliedDiscount,
+  type CardForm,
+  type PaymentReceipt,
+  type PublicCatalog,
+  type Ticket,
 } from "@/lib/tickets";
 
-type Qty = Record<TicketId, number>;
+type Qty = Record<string, number>;
 type Receipt = {
   ok: boolean;
   orderId: string;
@@ -30,51 +34,64 @@ type Receipt = {
   total: string;
 };
 
-const emptyQty = (): Qty => ({ early: 0, general: 0, senior: 0 });
-
 const fieldClass =
   "w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/30 focus:border-[#ff2d95]";
-
-function randomHex(bytes: number) {
-  const values = new Uint8Array(bytes);
-  crypto.getRandomValues(values);
-  return Array.from(values, (value) => value.toString(16).padStart(2, "0")).join("");
-}
 
 function formatDate(date: Date) {
   const pad = (value: number) => String(value).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 
+function toReceipt(payment: PaymentReceipt): Receipt {
+  const ok = payment.status === "Approved";
+  return {
+    ok,
+    orderId: payment.orderId,
+    transactionId: payment.transactionId,
+    date: formatDate(new Date(payment.createdAt)),
+    payment: payment.cardLast4 ? `${payment.cardBrand} ending ${payment.cardLast4}` : "None (free order)",
+    tickets: payment.lines.map((line) => `${line.quantity} × ${line.name}`).join(", "),
+    discount:
+      payment.discountedQty > 0 && payment.discountCode
+        ? `${payment.discountCode}: −${money(payment.discount)} (${payment.discountedQty} ticket${payment.discountedQty === 1 ? "" : "s"})`
+        : "",
+    total: ok ? money(payment.total) : money(0),
+  };
+}
+
 export function TicketDesk() {
-  const [qty, setQty] = useState<Qty>(emptyQty);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [doorPrice, setDoorPrice] = useState(0);
+  const [catalogState, setCatalogState] = useState<"loading" | "ready" | "error">("loading");
+  const [qty, setQty] = useState<Qty>({});
   const [codeInput, setCodeInput] = useState("");
-  const [applied, setApplied] = useState<{ code: string; percent: number } | null>(null);
+  const [applied, setApplied] = useState<AppliedDiscount | null>(null);
   const [codeMessage, setCodeMessage] = useState("");
   const [codeOk, setCodeOk] = useState(false);
   const [donation, setDonation] = useState("");
   const [open, setOpen] = useState(false);
-  const [step, setStep] = useState<"form" | "processing" | "result">("form");
-  const [card, setCard] = useState({ name: "", number: "", expiry: "", cvc: "" });
+  const [step, setStep] = useState<"form" | "processing" | "result" | "error">("form");
+  const [card, setCard] = useState<CardForm>({ name: "", number: "", expiry: "", cvc: "" });
   const [cardError, setCardError] = useState("");
+  const [orderError, setOrderError] = useState("");
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [now, setNow] = useState(() => new Date());
-  const [used, setUsed] = useState<Record<string, number>>({});
 
+  // Ticket types, prices, per-order limits and sale windows all come from the server (lib/payments/config/catalog.ts).
   useEffect(() => {
-    const testDate = parseTestDate(new URLSearchParams(window.location.search).get("date"));
+    const testDate = parseTestDate(testDateParam());
     if (testDate) setNow(testDate);
-    const codes = Object.keys(DISCOUNT_CODES);
-    Promise.all(
-      codes.map(async (code) => {
-        const response = await fetch(`/api/discount?code=${code}`);
-        if (!response.ok) return [code, 0] as const;
-        const data = (await response.json()) as { used?: number };
-        return [code, data.used ?? 0] as const;
-      }),
-    )
-      .then((pairs) => setUsed(Object.fromEntries(pairs)))
-      .catch(() => undefined);
+    fetch("/api/catalog", { cache: "no-store" })
+      .then((response) => {
+        if (!response.ok) throw new Error("catalog");
+        return response.json() as Promise<PublicCatalog>;
+      })
+      .then((data) => {
+        setDoorPrice(data.doorPrice);
+        setTickets(data.tickets.map((ticket) => ({ ...ticket, from: parseDay(ticket.from), until: parseDay(ticket.until) })));
+        setCatalogState("ready");
+      })
+      .catch(() => setCatalogState("error"));
   }, []);
 
   const donationCents = useMemo(() => {
@@ -84,78 +101,61 @@ export function TicketDesk() {
   }, [donation]);
 
   const order = useMemo(
-    () =>
-      computeOrder({
-        qty,
-        code: applied?.code ?? null,
-        used: applied ? (used[applied.code] ?? 0) : 0,
-        donationCents,
-        now,
-      }),
-    [applied, donationCents, now, qty, used],
+    () => computeOrder({ tickets, qty, discount: applied, donationCents, now }),
+    [tickets, applied, donationCents, now, qty],
   );
 
   const codeNotice = useMemo(() => {
     if (!applied) return codeMessage;
-    const rule = DISCOUNT_CODES[applied.code];
-    const names = rule.appliesTo
+    const names = applied.appliesTo
       .map((id) => tickets.find((ticket) => ticket.id === id)?.name)
       .filter(Boolean)
       .join(", ");
-    let text = `Code ${applied.code} applied: ${rule.percent}% off ${names} tickets.`;
+    let text = `Code ${applied.code} applied: ${applied.percent}% off ${names} tickets.`;
     if (order.eligibleQty > order.discountedQty) {
       text += ` Only ${order.discountedQty} of your ${order.eligibleQty} tickets get the discount.`;
     } else if (order.eligibleQty === 0) {
       text += ` Add ${names} tickets to use it.`;
     }
     return text;
-  }, [applied, codeMessage, order.discountedQty, order.eligibleQty]);
+  }, [applied, codeMessage, tickets, order.discountedQty, order.eligibleQty]);
 
-  const setCount = (id: TicketId, next: number) => {
+  const setCount = (id: string, next: number) => {
     const ticket = tickets.find((item) => item.id === id);
     if (!ticket || saleState(ticket, now) !== "onsale") return;
-    setQty((current) => ({ ...current, [id]: Math.max(0, Math.min(MAX_PER_TYPE, next)) }));
+    setQty((current) => ({ ...current, [id]: Math.max(0, Math.min(ticket.max, next)) }));
   };
 
-  const applyCode = () => {
+  // The server decides if a code is valid and how many discounted tickets are left (shared by all buyers).
+  const applyCode = async () => {
     const code = codeInput.trim().toUpperCase();
+    setApplied(null);
     if (!code) {
-      setApplied(null);
       setCodeMessage("");
       return;
     }
-    if (!Object.prototype.hasOwnProperty.call(DISCOUNT_CODES, code)) {
-      setApplied(null);
+    try {
+      const response = await fetch(`/api/discounts/${encodeURIComponent(code)}`, { headers: apiHeaders(), cache: "no-store" });
+      const data = (await response.json()) as
+        | { valid: true; code: string; percent: number; appliesTo: string[]; remaining: number }
+        | { valid: false; message: string }
+        | { error: string };
+      if ("valid" in data && data.valid) {
+        setApplied({ code: data.code, percent: data.percent, appliesTo: data.appliesTo, remaining: data.remaining });
+        setCodeOk(true);
+        setCodeMessage("");
+      } else {
+        setCodeOk(false);
+        setCodeMessage("message" in data ? data.message : "Could not check the code. Please try again.");
+      }
+    } catch {
       setCodeOk(false);
-      setCodeMessage("That code is not valid.");
-      return;
+      setCodeMessage("Could not check the code. Please try again.");
     }
-    const rule = DISCOUNT_CODES[code];
-    const onSale = tickets.some((ticket) => rule.appliesTo.includes(ticket.id) && saleState(ticket, now) === "onsale");
-    if (!onSale) {
-      const first = tickets.find((ticket) => rule.appliesTo.includes(ticket.id));
-      setApplied(null);
-      setCodeOk(false);
-      setCodeMessage(
-        first && saleState(first, now) === "upcoming"
-          ? `${code} can be used once ${first.name} goes on sale (${shortDate(first.from)}).`
-          : `${code} is no longer available.`,
-      );
-      return;
-    }
-    if (rule.limit - (used[code] ?? 0) <= 0) {
-      setApplied(null);
-      setCodeOk(false);
-      setCodeMessage(`Sorry, all ${rule.limit} ${code} discounts have been used.`);
-      return;
-    }
-    setApplied({ code, percent: rule.percent });
-    setCodeOk(true);
-    setCodeMessage("");
   };
 
   const reset = () => {
-    setQty(emptyQty());
+    setQty({});
     setApplied(null);
     setCodeInput("");
     setCodeMessage("");
@@ -163,41 +163,45 @@ export function TicketDesk() {
     setCard({ name: "", number: "", expiry: "", cvc: "" });
   };
 
-  const finish = async (paidWithCard: { brand: string; last4: string; declined: boolean } | null) => {
-    const now = new Date();
-    const ok = !paidWithCard?.declined;
-    if (ok && applied && order.discountedQty > 0) {
-      try {
-        const response = await fetch("/api/discount", {
+  // Sends the order to the server, which prices it again, charges the card and records the payment.
+  const pay = async (cardDetails: CardForm | null) => {
+    setStep("processing");
+    try {
+      const [response] = await Promise.all([
+        fetch("/api/payments", {
           method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ code: applied.code, count: order.discountedQty }),
-        });
-        if (response.ok) {
-          const data = (await response.json()) as { used?: number };
-          if (typeof data.used === "number") {
-            setUsed((current) => ({ ...current, [applied.code]: data.used as number }));
-          }
-        }
-      } catch {
-        /* The receipt still shows. The shared count updates on the next successful order. */
+          headers: apiHeaders(true),
+          body: JSON.stringify({
+            items: Object.fromEntries(order.lines.map((line) => [line.ticket.id, line.quantity])),
+            discountCode: applied?.code ?? null,
+            donation: donationCents / 100,
+            card: cardDetails,
+          }),
+        }),
+        new Promise((resolve) => window.setTimeout(resolve, 1000)), // keep "Processing" visible briefly
+      ]);
+      const data = (await response.json()) as PaymentReceipt | { error: string };
+      if (!response.ok || "error" in data) {
+        showError("error" in data ? data.error : "Something went wrong. Please try again.", Boolean(cardDetails));
+        return;
       }
+      const result = toReceipt(data);
+      setReceipt(result);
+      setStep("result");
+      if (result.ok) reset();
+    } catch {
+      showError("Could not reach the server. Please try again.", Boolean(cardDetails));
     }
-    setReceipt({
-      ok,
-      orderId: `MCC-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${randomHex(3).toUpperCase()}`,
-      transactionId: `txn_${randomHex(8)}`,
-      date: formatDate(now),
-      payment: paidWithCard ? `${paidWithCard.brand} ending ${paidWithCard.last4}` : "None (free order)",
-      tickets: order.lines.map((line) => `${line.quantity} × ${line.ticket.name}`).join(", "),
-      discount:
-        order.discountedQty > 0 && applied
-          ? `${applied.code}: −${money(order.discount)} (${order.discountedQty} ticket${order.discountedQty === 1 ? "" : "s"})`
-          : "",
-      total: ok ? money(order.total) : money(0),
-    });
-    setStep("result");
-    if (ok) reset();
+  };
+
+  const showError = (message: string, hasCard: boolean) => {
+    if (hasCard) {
+      setCardError(message);
+      setStep("form");
+    } else {
+      setOrderError(message);
+      setStep("error");
+    }
   };
 
   const startPay = () => {
@@ -205,8 +209,7 @@ export function TicketDesk() {
     setCardError("");
     if (order.total === 0) {
       setOpen(true);
-      setStep("processing");
-      window.setTimeout(() => finish(null), 1500);
+      void pay(null);
       return;
     }
     setStep("form");
@@ -221,9 +224,7 @@ export function TicketDesk() {
       return;
     }
     setCardError("");
-    setStep("processing");
-    const snapshot = result;
-    window.setTimeout(() => finish(snapshot), 1500);
+    void pay(result.card);
   };
 
   return (
@@ -248,8 +249,9 @@ export function TicketDesk() {
       <section id="buy" className="mx-auto grid max-w-6xl gap-6 px-5 py-12 sm:px-8 lg:grid-cols-[1.4fr_0.8fr]">
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-7">
           <h2 className="font-display text-4xl">Choose your tickets</h2>
-          <p className="mt-1 text-sm text-white/50">Select how many of each ticket you need (max 10 per type).</p>
-          <p className="mt-4 rounded-xl border border-sky-300/30 bg-sky-400/10 px-4 py-3 text-sm text-white/85">{saleStatus(now)}</p>
+          <p className="mt-1 text-sm text-white/50">Select how many of each ticket you need.</p>
+          <p className="mt-4 rounded-xl border border-sky-300/30 bg-sky-400/10 px-4 py-3 text-sm text-white/85">{catalogState === "error" ? "Tickets are unavailable right now. Please try again in a moment." : saleStatus(tickets, doorPrice, now)}</p>
+          {catalogState === "loading" ? <p className="mt-4 text-sm text-white/50">Loading tickets…</p> : null}
           <ul className="mt-2 divide-y divide-white/10">
             {tickets.map((ticket) => {
               const state = saleState(ticket, now);
@@ -259,7 +261,7 @@ export function TicketDesk() {
                   <div>
                     <p className="text-lg font-semibold">{ticket.name}</p>
                     <p className="text-sm text-white/50">
-                      {ticket.note} · {windowLabel}
+                      {ticket.note} · {windowLabel} · Max {ticket.max} per order
                     </p>
                   </div>
                   <div className="flex items-center gap-4">
@@ -270,16 +272,16 @@ export function TicketDesk() {
                           type="button"
                           className="h-10 w-10 text-lg"
                           aria-label={`Remove one ${ticket.name}`}
-                          onClick={() => setCount(ticket.id, qty[ticket.id] - 1)}
+                          onClick={() => setCount(ticket.id, (qty[ticket.id] ?? 0) - 1)}
                         >
                           −
                         </button>
-                        <span className="w-6 text-center text-sm font-semibold">{qty[ticket.id]}</span>
+                        <span className="w-6 text-center text-sm font-semibold">{qty[ticket.id] ?? 0}</span>
                         <button
                           type="button"
                           className="h-10 w-10 text-lg"
                           aria-label={`Add one ${ticket.name}`}
-                          onClick={() => setCount(ticket.id, qty[ticket.id] + 1)}
+                          onClick={() => setCount(ticket.id, (qty[ticket.id] ?? 0) + 1)}
                         >
                           +
                         </button>
@@ -329,12 +331,12 @@ export function TicketDesk() {
               value={codeInput}
               onChange={(input) => setCodeInput(input.target.value.toUpperCase())}
               onKeyDown={(input) => {
-                if (input.key === "Enter") applyCode();
+                if (input.key === "Enter") void applyCode();
               }}
               placeholder="Enter code"
               className={fieldClass}
             />
-            <button type="button" className="rounded-lg bg-white/10 px-4 text-sm font-bold" onClick={applyCode}>
+            <button type="button" className="rounded-lg bg-white/10 px-4 text-sm font-bold" onClick={() => void applyCode()}>
               Apply
             </button>
           </div>
@@ -416,7 +418,7 @@ export function TicketDesk() {
                     ×
                   </button>
                 </div>
-                <p className="mt-2 text-xs text-white/45">Card details are never sent or saved. Only the brand and last 4 digits are shown on the receipt.</p>
+                <p className="mt-2 text-xs text-white/45">No real charge is made. Card details are sent to our server for this one payment; only the brand and last 4 digits are saved.</p>
                 <label className="mt-4 block text-xs font-semibold uppercase tracking-wide text-white/55" htmlFor="card-name">Name on card</label>
                 <input id="card-name" autoComplete="cc-name" value={card.name} onChange={(input) => setCard({ ...card, name: input.target.value })} className={`${fieldClass} mt-1`} />
                 <label className="mt-3 block text-xs font-semibold uppercase tracking-wide text-white/55" htmlFor="card-number">Card number</label>
@@ -466,6 +468,15 @@ export function TicketDesk() {
             ) : null}
             {step === "processing" ? (
               <p className="py-10 text-center text-sm text-white/70">Processing payment…</p>
+            ) : null}
+            {step === "error" ? (
+              <div>
+                <h2 id="pay-title" className="font-display text-4xl">We could not complete your order</h2>
+                <p className="mt-2 text-sm text-white/65">{orderError}</p>
+                <button type="button" className={`${solidButtonClass} mt-5 w-full`} onClick={() => setOpen(false)}>
+                  Close
+                </button>
+              </div>
             ) : null}
             {step === "result" && receipt ? (
               <div>

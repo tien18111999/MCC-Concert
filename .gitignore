@@ -11,3 +11,7 @@ npm-debug.log*
 
 data/*.db
 data/*.db-*
+
+data/payments.json
+data/payments.json.tmp
+*.log
