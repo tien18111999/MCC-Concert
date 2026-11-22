@@ -55,6 +55,30 @@ npm install
 npm run dev
 ```
 
-Then open http://localhost:3000. (If port 3000 is busy, Next.js prints the port it used.) Copy `.env.example` to `.env.local` and fill it in if you want the waitlist, volunteer list and staff page to work; the tickets page and sales report need no setup.
+Then open http://localhost:3000. If port 3000 is busy, Next.js uses the next free one and prints it (for example 3001); use that port in every URL below.
 
-The payments and reporting backend is described in [lib/payments/docs/README.md](lib/payments/docs/README.md).
+## Running the backend
+
+The payments backend is part of the same Next.js app, so there is nothing separate to start: `npm run dev` runs the site and the API together. The code is in `lib/payments/` and the routes are in `app/api/`.
+
+1. Start it with `npm run dev`.
+2. Check it works: open http://localhost:3000/api/catalog. You should see the ticket list as JSON.
+3. Try the ticket page with a sale date that is open: http://localhost:3000/tickets?date=2027-05-30 (sales open May 12, 2027, so without `?date=` nothing can be bought yet).
+4. Fill the sales report with fake data: open http://localhost:3000/api/test-charge, then http://localhost:3000/reports.
+5. Start again from zero at any time: open http://localhost:3000/api/refresh.
+
+Payments are saved in `data/payments.json`, which is created by the first payment (or by `/api/refresh`). No database setup is needed for payments.
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | Runs the site and the backend in development mode |
+| `npm test` | Runs the backend tests |
+| `npm run mock:generate` | Rebuilds the fake payments file used by `/api/test-charge` |
+
+Notes:
+
+- `/api/test-charge`, `/api/refresh` and the `?date=` test dates only work in development mode. After `npm run build` + `npm start` they are switched off (set `ENABLE_DEV_ENDPOINTS=true` to keep the two endpoints on).
+- Changes under `lib/payments/` need the dev server restarted to take effect.
+- The waitlist, volunteer and staff pages need `DATABASE_URL` and `STAFF_PASSWORD` in `.env.local` (copy `.env.example`). Tickets and the sales report need no setup.
+
+Every endpoint, with Postman examples and a ready-to-import collection, is documented in [lib/payments/docs/README.md](lib/payments/docs/README.md).
