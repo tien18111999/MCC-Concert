@@ -46,6 +46,8 @@ The website for **MCC Turn It Up**, the Community Music & Family Festival hosted
 - Discount code **MCCVIBES** gives 30% off General Admission for the first 50 discounted tickets.
 - Online checkout is a demo: no real charge is made.
 
+The original static HTML version of the home and ticket pages is kept in `legacy/` for reference. It is not served by the app.
+
 ## Running it
 
 Requires Node.js 20+.
