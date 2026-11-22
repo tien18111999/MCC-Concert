@@ -24,7 +24,7 @@ export async function readJson(request: Request): Promise<unknown> {
 }
 
 /**
- * The moment used for sale windows. Outside production, a `?date=YYYY-MM-DD` query parameter or an
+ * The moment used for sale windows. When allowed in config, a `?date=YYYY-MM-DD` query parameter or an
  * `X-Simulated-Date: YYYY-MM-DD` header (the ticket page's ?date= test links send the header)
  * overrides the real clock so sale phases can be tested. The query parameter wins if both are sent.
  */

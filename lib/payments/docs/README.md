@@ -54,10 +54,9 @@ A JSON file needs a writable disk. It works locally and on a normal server, but 
 
 ## Dev vs. production
 
-`npm run dev` is development mode. `npm run build` + `npm start` is production mode, where:
+Every endpoint works the same in development (`npm run dev`) and production (`npm run build` + `npm start`), including `/api/test-charge`, `/api/refresh` and the `?date=` / `X-Simulated-Date` simulated date.
 
-- `/api/test-charge` and `/api/refresh` return 404 (set `ENABLE_DEV_ENDPOINTS=true` to force them on);
-- the `X-Simulated-Date` header and the ticket page's `?date=` test links are ignored.
+**Warning:** these have no login. Anyone who knows the URL can delete all payments (`/api/refresh`), load fake ones (`/api/test-charge`), or buy tickets before sales open by adding `?date=`. To switch them off on a live site, set `ENABLE_DEV_ENDPOINTS=false` and/or `ALLOW_SIMULATED_DATE=false`.
 
 ## Using the API in Postman
 
@@ -67,7 +66,7 @@ A JSON file needs a writable disk. It works locally and on a normal server, but 
 
 ### Testing a date: `?date=` or `X-Simulated-Date`
 
-Online sales open **2027-05-12**, so today's real date is before any sale. To test a sale phase, add `?date=YYYY-MM-DD` to the URL of `/api/discounts/:code` or `/api/payments` (or send the header `X-Simulated-Date: YYYY-MM-DD`; the query parameter wins if both are sent). Both are ignored in production mode.
+Online sales open **2027-05-12**, so today's real date is before any sale. To test a sale phase, add `?date=YYYY-MM-DD` to the URL of `/api/discounts/:code` or `/api/payments` (or send the header `X-Simulated-Date: YYYY-MM-DD`; the query parameter wins if both are sent). It works in production too; set `ALLOW_SIMULATED_DATE=false` to ignore it.
 
 Example: http://localhost:3000/api/discounts/MCCVIBES?date=2027-05-30
 
@@ -242,7 +241,7 @@ Example: `GET {{baseUrl}}/api/reports?cardBrand=Visa&status=Approved`
 
 ## Testing tools
 
-These two are for development. They overwrite or delete data and have no login, so they are **off in production mode** (set `ENABLE_DEV_ENDPOINTS=true` to force them on). GET and POST both work, so you can also open them in a browser.
+These two are for testing. They overwrite or delete data and have no login (see the warning under *Dev vs. production*); set `ENABLE_DEV_ENDPOINTS=false` to turn them off. GET and POST both work, so you can also open them in a browser.
 
 ### `POST /api/test-charge`: load fake data
 
