@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background: #07030f;
+  color: #f6f1ff;
+  font-family: var(--font-outfit), sans-serif;
+}
+
+.font-display {
+  font-family: var(--font-bebas), Impact, sans-serif;
+  letter-spacing: 0.04em;
+}
+
+::selection {
+  background: #ff2d95;
+  color: white;
+}
+
+:focus-visible {
+  outline: 2px solid #ff2d95;
+  outline-offset: 3px;
+}
