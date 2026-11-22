@@ -77,7 +77,7 @@ export function parseTestDate(value: string | null) {
   return new Date(year, month - 1, day, 12);
 }
 
-/** Headers for API calls. Forwards the test date so the server applies the same sale phase (ignored in production). */
+/** Headers for API calls. Forwards the test date so the server applies the same sale phase. */
 export function apiHeaders(withJson = false): HeadersInit {
   const headers: Record<string, string> = withJson ? { "content-type": "application/json" } : {};
   const testDate = testDateParam();

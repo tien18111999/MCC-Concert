@@ -77,7 +77,7 @@ Payments are saved in `data/payments.json`, which is created by the first paymen
 
 Notes:
 
-- `/api/test-charge`, `/api/refresh` and the `?date=` test dates only work in development mode. After `npm run build` + `npm start` they are switched off (set `ENABLE_DEV_ENDPOINTS=true` to keep the two endpoints on).
+- Every endpoint, including `/api/test-charge`, `/api/refresh` and the `?date=` test dates, works in development and production (`npm run build` + `npm start`). They have no login, so on a public site anyone can wipe the payments or buy before sales open. Set `ENABLE_DEV_ENDPOINTS=false` and/or `ALLOW_SIMULATED_DATE=false` to turn them off.
 - Changes under `lib/payments/` need the dev server restarted to take effect.
 - The waitlist, volunteer and staff pages need `DATABASE_URL` and `STAFF_PASSWORD` in `.env.local` (copy `.env.example`). Tickets and the sales report need no setup.
 
