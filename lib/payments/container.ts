@@ -3,6 +3,7 @@ import { buildCatalog, type Catalog } from "./config/catalog";
 import { loadConfig, type AppConfig } from "./config";
 import { CatalogController } from "./controllers/CatalogController";
 import { DevController } from "./controllers/DevController";
+import { ForecastController } from "./controllers/ForecastController";
 import { DiscountController } from "./controllers/DiscountController";
 import { PaymentController } from "./controllers/PaymentController";
 import { ReportController } from "./controllers/ReportController";
@@ -12,6 +13,7 @@ import type { PaymentRepository } from "./repositories/PaymentRepository";
 import { CardValidator } from "./services/CardValidator";
 import { CatalogService } from "./services/CatalogService";
 import { DiscountService } from "./services/DiscountService";
+import { ForecastService } from "./services/ForecastService";
 import { MockCardProcessor } from "./services/MockCardProcessor";
 import { MockDataService } from "./services/MockDataService";
 import type { PaymentProcessor } from "./services/PaymentProcessor";
@@ -51,6 +53,7 @@ export function buildContainer(options: Options = {}) {
     discountController: new DiscountController(discountService, config),
     reportController: new ReportController(reportService),
     devController: new DevController(mockDataService, config),
+    forecastController: new ForecastController(new ForecastService(catalog)),
   };
 }
 

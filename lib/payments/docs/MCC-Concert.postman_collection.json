@@ -5,19 +5,33 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:3000" },
-    { "key": "simDate", "value": "2027-05-30" }
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "simDate",
+      "value": "2027-05-30"
+    }
   ],
   "item": [
     {
       "name": "Catalog: list tickets",
-      "request": { "method": "GET", "url": "{{baseUrl}}/api/catalog" }
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/catalog"
+      }
     },
     {
       "name": "Discount: check MCCVIBES",
       "request": {
         "method": "GET",
-        "header": [{ "key": "X-Simulated-Date", "value": "{{simDate}}" }],
+        "header": [
+          {
+            "key": "X-Simulated-Date",
+            "value": "{{simDate}}"
+          }
+        ],
         "url": "{{baseUrl}}/api/discounts/MCCVIBES"
       }
     },
@@ -25,7 +39,12 @@
       "name": "Discount: invalid code",
       "request": {
         "method": "GET",
-        "header": [{ "key": "X-Simulated-Date", "value": "{{simDate}}" }],
+        "header": [
+          {
+            "key": "X-Simulated-Date",
+            "value": "{{simDate}}"
+          }
+        ],
         "url": "{{baseUrl}}/api/discounts/NOPE"
       }
     },
@@ -34,8 +53,14 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "X-Simulated-Date", "value": "{{simDate}}" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Simulated-Date",
+            "value": "{{simDate}}"
+          }
         ],
         "body": {
           "mode": "raw",
@@ -49,8 +74,14 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "X-Simulated-Date", "value": "{{simDate}}" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Simulated-Date",
+            "value": "{{simDate}}"
+          }
         ],
         "body": {
           "mode": "raw",
@@ -64,10 +95,19 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "X-Simulated-Date", "value": "{{simDate}}" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Simulated-Date",
+            "value": "{{simDate}}"
+          }
         ],
-        "body": { "mode": "raw", "raw": "{\n  \"items\": { \"senior\": 2 }\n}" },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": { \"senior\": 2 }\n}"
+        },
         "url": "{{baseUrl}}/api/payments"
       }
     },
@@ -76,8 +116,14 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "X-Simulated-Date", "value": "{{simDate}}" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Simulated-Date",
+            "value": "{{simDate}}"
+          }
         ],
         "body": {
           "mode": "raw",
@@ -88,7 +134,10 @@
     },
     {
       "name": "Report: all sales",
-      "request": { "method": "GET", "url": "{{baseUrl}}/api/reports" }
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/reports"
+      }
     },
     {
       "name": "Report: Visa, approved only",
@@ -96,22 +145,70 @@
         "method": "GET",
         "url": {
           "raw": "{{baseUrl}}/api/reports?cardBrand=Visa&status=Approved",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "reports"],
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "reports"
+          ],
           "query": [
-            { "key": "cardBrand", "value": "Visa" },
-            { "key": "status", "value": "Approved" }
+            {
+              "key": "cardBrand",
+              "value": "Visa"
+            },
+            {
+              "key": "status",
+              "value": "Approved"
+            }
           ]
         }
       }
     },
     {
       "name": "Dev: /api/test-charge (load mock payments)",
-      "request": { "method": "POST", "url": "{{baseUrl}}/api/test-charge" }
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/test-charge"
+      }
     },
     {
       "name": "Dev: /api/refresh (wipe data file)",
-      "request": { "method": "POST", "url": "{{baseUrl}}/api/refresh" }
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/refresh"
+      }
+    },
+    {
+      "name": "Forecast: settings",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/forecast"
+      }
+    },
+    {
+      "name": "Forecast: calculate",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"earlyBird\": 100,\n  \"general\": 50,\n  \"discounted\": 10,\n  \"atDoor\": 20,\n  \"vendors\": 6\n}"
+        },
+        "url": "{{baseUrl}}/api/forecast"
+      }
+    },
+    {
+      "name": "Forecast: random",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/forecast/random"
+      }
     }
   ]
 }
