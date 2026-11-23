@@ -19,10 +19,11 @@ Everything for payments lives in `lib/payments/`, next to the project's existing
 lib/payments/
   config/         catalog.ts: ticket prices, per-order limits, sale windows, discount codes, fees.
                   The one place to edit them. index.ts: file paths and dev switches
-  models/         Payment, CheckoutRequest, Stats
+  models/         Payment, CheckoutRequest, ForecastRequest, Stats
   repositories/   PaymentRepository (interface), JsonFilePaymentRepository, InMemoryPaymentRepository
   services/       PricingService, DiscountService, SalePolicy, CatalogService, CardValidator,
-                  PaymentProcessor (interface) + MockCardProcessor, PaymentService, ReportService, MockDataService
+                  PaymentProcessor (interface) + MockCardProcessor, PaymentService, ReportService, MockDataService,
+                  ForecastService
   controllers/    HTTP only: parse the request, call a service, build the Response
   errors/         AppError, ValidationError, NotFoundError
   container.ts    composition root: the only place that picks concrete classes
@@ -31,9 +32,11 @@ lib/payments/
   tests/          API tests
   docs/           this README and the Postman collection
 
-app/api/          thin route files: catalog, discounts/[code], payments, reports, test-charge, refresh
+app/api/          thin route files: catalog, discounts/[code], payments, reports, forecast, forecast/random, test-charge, refresh
 app/reports/      sales report page
-components/       TicketDesk.tsx (ticket page), ReportsDashboard.tsx (charts + table)
+app/forecast/     forecast page (line chart)
+components/       TicketDesk.tsx (ticket page), ReportsDashboard.tsx (charts + table),
+                  ForecastDesk.tsx (forecast panel), ForecastChart.tsx (SVG line chart)
 lib/tickets.ts    client-side helpers for the ticket page (price preview, card form checks)
 data/payments.json   the payments "database" (git-ignored, created on first payment)
 ```
@@ -236,6 +239,72 @@ Example: `GET {{baseUrl}}/api/reports?cardBrand=Visa&status=Approved`
 }
 ```
 `recent` has up to 50 payments, newest first. A bad date returns `400` with `"from" must be YYYY-MM-DD.`
+
+---
+
+### `GET /api/forecast`: forecast settings
+
+Prices and limits used by the `/forecast` page. Read from `lib/payments/config/catalog.ts`.
+
+**Postman:** GET `{{baseUrl}}/api/forecast`
+
+**Response `200`**
+```json
+{
+  "prices": { "earlyBird": 800, "general": 1500, "discounted": 1050, "atDoor": 1800 },
+  "discount": { "code": "MCCVIBES", "percent": 30, "limit": 50 },
+  "vendorFee": 50000,
+  "capacity": 700,
+  "limits": { "perType": 700, "discounted": 50, "vendors": 30 }
+}
+```
+
+---
+
+### `POST /api/forecast`: calculate a forecast
+
+A what-if calculator. It never reads or writes real payments and never touches the discount counter. Money is in cents; revenue is gross (before card fees). Missing fields count as 0.
+
+**Postman:** POST `{{baseUrl}}/api/forecast` · Body → raw → JSON:
+
+```json
+{ "earlyBird": 100, "general": 50, "discounted": 10, "atDoor": 20, "vendors": 6 }
+```
+
+| Field | Meaning |
+|---|---|
+| `earlyBird`, `general`, `atDoor` | Tickets, 0 to the venue capacity (700) |
+| `discounted` | General tickets bought with the discount code, 0 to the code's limit (50). Counted separately from `general` |
+| `vendors` | Vendors, 0 to 30. Each pays the vendor fee ($500) |
+
+**Response `200`** (shortened)
+```json
+{
+  "input": { "earlyBird": 100, "general": 50, "discounted": 10, "atDoor": 20, "vendors": 6 },
+  "tickets": {
+    "earlyBird": { "count": 100, "unitPrice": 800, "revenue": 80000 },
+    "general": { "count": 50, "unitPrice": 1500, "revenue": 75000 },
+    "discounted": { "count": 10, "unitPrice": 1050, "revenue": 10500 },
+    "atDoor": { "count": 20, "unitPrice": 1800, "revenue": 36000 }
+  },
+  "vendors": { "count": 6, "fee": 50000, "revenue": 300000 },
+  "totals": {
+    "onlineTicketCount": 160, "onlineTickets": 165500, "doorTickets": 36000, "vendors": 300000,
+    "grandTotal": 501500, "attendees": 180, "capacity": 700, "capacityUsed": 0.257, "overCapacity": false
+  }
+}
+```
+`onlineTickets` is the revenue from Early Bird + General + discounted tickets. `overCapacity` is `true` when `attendees` is more than the capacity (the forecast is still calculated).
+
+**Errors `400`:** `"discounted"` above the code's limit (`Only 50 tickets can use the MCCVIBES discount.`), `vendors` above 30, a ticket count above 700, or a value that is not a whole number 0 or more.
+
+---
+
+### `GET /api/forecast/random`: random forecast
+
+Creates a random scenario with exactly **500 tickets** (`forecast.random.totalTickets` in `catalog.ts`) split at random between Early Bird, General, discounted and door tickets, plus a random number of vendors, and returns it in the same format as `POST /api/forecast`. GET and POST both work.
+
+**Postman:** GET `{{baseUrl}}/api/forecast/random`
 
 ---
 

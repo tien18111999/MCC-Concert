@@ -29,6 +29,7 @@ The website for **MCC Turn It Up**, the Community Music & Family Festival hosted
 | Sponsorships `/sponsorships` | Sponsor information and logos |
 | Updates waitlist | Sign up to hear first about the ticket drop |
 | Staff `/staff` | Password-protected waitlist and volunteer lists (CSV export) |
+| Forecast `/forecast` | For organizers: a what-if tool with a line chart. Set how many Early Bird, General, discounted and door tickets and how many vendors (each pays $500) to see the money the festival could make; a Random button fills it in for you |
 | Sales report `/reports` | For organizers: charts and a table of online ticket sales, filterable by card type, status, ticket type and dates |
 
 ## Tickets

@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "tsx --test lib/payments/tests/api.test.ts",
+    "test": "tsx --test lib/payments/tests/api.test.ts lib/payments/tests/forecast.test.ts",
     "mock:generate": "tsx lib/payments/mock/generate-mock-payments.ts"
   },
   "dependencies": {
