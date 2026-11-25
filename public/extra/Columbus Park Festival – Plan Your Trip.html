@@ -63,16 +63,12 @@ a.lnk{display:inline-block;margin-top:6px;color:var(--bl);font-weight:600;font-s
 <div><label>Direction</label><div class="seg"><button id="d1" class="on">To the festival</button><button id="d2">Going home</button></div></div>
 <div id="adrbox"><label>Search an address</label><input id="adr" placeholder="e.g. 233 S Wacker Dr, Chicago" autocomplete="off"><div id="adrlist"></div></div>
 </div>
-<div class="keyrow">
-<div style="flex:1"><label>Google Maps API key</label><input id="gkey" type="password" placeholder="Paste your Maps JavaScript API key"></div>
-<div style="flex:0 1 140px"><label>&nbsp;</label><button id="loadmap" class="pri">Load map</button></div>
-</div>
 <p class="hint" id="gm"></p>
 </div>
 
-<div class="card"><div id="mapw"><div id="mapmsg">Enter a Google Maps API key above, then tap Load map. Enable Maps JavaScript API, Directions API, and Places API.</div><div id="gmap"></div></div>
+<div class="card"><div id="mapw"><div id="mapmsg">Loading the map…</div><div id="gmap"></div></div>
 <div class="lg"><span><i style="background:var(--te)"></i>Walk to shuttle</span><span><i style="background:var(--bl)"></i>Transit</span><span><i style="background:var(--or)"></i>Drive</span><span><i style="background:var(--pu)"></i>You (drag me)</span></div>
-<p class="hint">Choose a place, search an address, tap the map, or drag the purple pin. Trip times update from Google Maps routes.
+<p class="hint">Choose a place, search an address, tap the map, or drag the purple pin. Trip times update from the route.
 <button id="zm" style="width:auto;margin-left:6px;padding:4px 10px;font-size:.8rem">Zoom to the park</button></p></div>
 
 <div class="grid" id="out"></div>
@@ -85,52 +81,35 @@ const DEST="500 S Central Ave, Chicago, IL";
 const MAPS_KEY="AIzaSyChcHZSi1gkZy2DBl3TY2YAWSGCYHujCDQ";
 const PRE=[["Choose a place…",null],["Union Station (Loop)",S1],["Clark/Lake (Loop)",[41.8857,-87.6309]],["Millennium Park",[41.8826,-87.6226]],["Oak Park downtown",[41.885,-87.7845]],["Midway Airport",[41.7868,-87.7522]],["Wrigleyville",[41.9484,-87.6553]],["Hyde Park",[41.7943,-87.5907]],["Evanston",[42.0451,-87.6877]],["O’Hare Airport",[41.9742,-87.9073]],["Naperville",[41.7508,-88.1535]]];
 const st={a:null,dir:1,close:false,routes:{},seq:0};
-let map,you,ds,renderers={},ready=false,addrTimer=0,addrSeq=0,addrShown="";
+let map,you,lines={},ready=false,addrTimer=0,addrSeq=0,addrShown="";
 const $=id=>document.getElementById(id);
 const km=(a,b)=>{const r=Math.PI/180,x=(b.lng-a.lng)*r*Math.cos((a.lat+b.lat)*r/2),y=(b.lat-a.lat)*r;return 6371*Math.hypot(x,y)};
 const fmt=m=>{m=Math.round(m);const h=Math.floor(m/60)%24,mm=m%60;return((h%12)||12)+":"+String(mm).padStart(2,"0")+(h<12?" am":" pm")};
 const walkEst=d=>Math.max(1,Math.ceil(d*1.3/4.8*60));
 const pt=a=>Array.isArray(a)?{lat:a[0],lng:a[1]}:a;
 const ll=p=>new google.maps.LatLng(p.lat,p.lng);
-const mins=res=>res&&res.routes[0]?Math.max(1,Math.round(res.routes[0].legs.reduce((s,l)=>s+l.duration.value,0)/60)):null;
-const distKm=res=>res&&res.routes[0]?res.routes[0].legs.reduce((s,l)=>s+l.distance.value,0)/1000:null;
-const steps=res=>{
-  if(!res||!res.routes[0])return[];
-  const out=[];
-  res.routes[0].legs.forEach(leg=>leg.steps.forEach(s=>{
-    const t=s.instructions?s.instructions.replace(/<[^>]+>/g," "):"";
-    const line=s.transit&&s.transit.line;
-    out.push({t,dur:Math.round(s.duration.value/60),line:line?((line.short_name||line.name)+" "+(line.vehicle?line.vehicle.name:"")):""});
-  }));
-  return out.slice(0,6);
-};
+const miles=meters=>meters?` · ${(meters/1609.344).toFixed(1)} mi`:"";
 function times(first,last,from){const r=[];for(let t=first;t<=last;t+=30)if(t>=from)r.push(t);return r}
 function walkMin(stop){
-  const key=stop===S1?"w1":"w2";
-  const m=mins(st.routes[key]);
-  return m!=null?m:walkEst(km(st.a,stop));
+  const route=stop===S1?st.routes.w1:st.routes.w2;
+  return route&&route.minutes?route.minutes:walkEst(km(st.a,stop));
 }
-function route(origin,dest,mode){
-  return new Promise(resolve=>{
-    const timer=setTimeout(()=>resolve(null),8000);
-    ds.route({origin,destination:dest,travelMode:google.maps.TravelMode[mode],provideRouteAlternatives:false},(res,status)=>{
-      clearTimeout(timer);
-      resolve(status==="OK"?res:null);
-    });
-  });
-}
-function mkRenderer(color){
-  return new google.maps.DirectionsRenderer({
-    map,suppressMarkers:true,preserveViewport:true,
-    polylineOptions:{strokeColor:color,strokeWeight:5,strokeOpacity:.85}
-  });
+function trip(mode,from,to){
+  const url=`/api/trip?mode=${mode}&from=${from.lat},${from.lng}&to=${to.lat},${to.lng}`;
+  return fetch(url).then(r=>r.ok?r.json():{route:null}).then(data=>data.route||null).catch(()=>null);
 }
 function showRoutes(){
+  if(!map)return;
+  const colors={drive:"#e8590c",transit:"#1f6fc2",walk:"#0f7c85"};
   const r=st.routes;
-  if(r.drive){renderers.drive.setMap(map);renderers.drive.setDirections(r.drive)}else renderers.drive.setMap(null);
-  if(r.transit){renderers.transit.setMap(map);renderers.transit.setDirections(r.transit)}else renderers.transit.setMap(null);
-  const walkRes=r.w1&&r.w2?(mins(r.w1)<=mins(r.w2)?r.w1:r.w2):(r.w1||r.w2);
-  if(walkRes){renderers.walk.setMap(map);renderers.walk.setDirections(walkRes)}else renderers.walk.setMap(null);
+  const walkRes=r.w1&&r.w2?(r.w1.minutes<=r.w2.minutes?r.w1:r.w2):(r.w1||r.w2);
+  const chosen={drive:r.drive,transit:r.transit,walk:walkRes};
+  Object.keys(colors).forEach(key=>{
+    if(lines[key])lines[key].setMap(null);
+    const path=chosen[key]&&chosen[key].path;
+    if(!path||!path.length)return;
+    lines[key]=new google.maps.Polyline({map,path:path.map(([lat,lng])=>({lat,lng})),strokeColor:colors[key],strokeWeight:5,strokeOpacity:.85});
+  });
 }
 function fitMap(){
   if(!map)return;
@@ -142,17 +121,17 @@ function fitMap(){
 }
 async function updateRoutes(){
   render();
-  if(!st.a||!ready)return;
+  if(!st.a)return;
   const seq=++st.seq;
   $("out").classList.add("busy");
-  $("gm").textContent="Updating Google Maps routes…";
-  const origin=st.dir===1?ll(st.a):ll(EV);
-  const dest=st.dir===1?ll(EV):ll(st.a);
+  $("gm").textContent="Updating routes…";
+  const origin=st.dir===1?st.a:EV;
+  const dest=st.dir===1?EV:st.a;
   const [drive,transit,w1,w2]=await Promise.all([
-    route(origin,dest,"DRIVING"),
-    route(origin,dest,"TRANSIT"),
-    route(ll(st.a),ll(S1),"WALKING"),
-    route(ll(st.a),ll(S2),"WALKING")
+    trip("drive",origin,dest),
+    trip("transit",origin,dest),
+    trip("walk",st.a,S1),
+    trip("walk",st.a,S2)
   ]);
   if(seq!==st.seq)return;
   st.routes={drive,transit,w1,w2};
@@ -166,37 +145,34 @@ function shuttle(L){
   if(st.dir==1){
     const o=[[S1,"S1 Union Station",630,1170,30],[S2,"S2 Austin Blue Line",648,1188,12]].map(([p,n,f,l,r])=>{
       const w=walkMin(p),ts=times(f,l,L+w);
-      return{n,w,ts,r,arr:ts.length?ts[0]+r:1e9,d:distKm(p===S1?st.routes.w1:st.routes.w2)||km(st.a,p)};
+      const walked=p===S1?st.routes.w1:st.routes.w2;
+      return{n,w,ts,r,arr:ts.length?ts[0]+r:1e9,d:walked&&walked.meters?walked.meters/1000:km(st.a,p)};
     }).sort((a,b)=>a.arr-b.arr);
     const b=o[0];
     if(b.arr>=1e9)return`<div class="big">No more guest buses</div><p>The last guest bus leaves Union Station at 7:30 pm. Try the transit or car option.</p>`;
     const tot=b.arr-L;
-    h+=`<div class="big">Arrive ${fmt(b.arr)}</div><ul><li>Walk about <b>${b.w} min</b> to <b>${b.n}</b> (Google Maps walking route)</li><li>Next buses leave at:</li></ul><div class="times">${b.ts.slice(0,3).map((t,i)=>`<span class="${i?"":"first"}">${fmt(t)}</span>`).join("")}</div><ul><li>Ride to the park Main Entrance (S3): <b>${b.n.startsWith("S1")?30:12} min</b></li><li>About <b>${tot} min</b> door to park, including waiting</li></ul>`;
+    h+=`<div class="big">Arrive ${fmt(b.arr)}</div><ul><li>Walk about <b>${b.w} min</b> to <b>${b.n}</b></li><li>Next buses leave at:</li></ul><div class="times">${b.ts.slice(0,3).map((t,i)=>`<span class="${i?"":"first"}">${fmt(t)}</span>`).join("")}</div><ul><li>Ride to the park Main Entrance (S3): <b>${b.n.startsWith("S1")?30:12} min</b></li><li>About <b>${tot} min</b> door to park, including waiting</li></ul>`;
     if(b.d>4)h+=`<div class="note">You are far from the shuttle stops. Take CTA or Metra to Union Station, or the Blue Line to Austin, then catch the free shuttle.</div>`;
     if(b.arr<720)h+=`<div class="note">Gates open at 12:00 pm.</div>`;
   }else{
     const ts=times(722,1292,L);
     if(!ts.length)return`<div class="big">No more buses</div><p>The last bus leaves the park at 9:32 pm.</p>`;
     const o=[[S2,"S2 Austin Blue Line",5],[S1,"S1 Union Station",25]].map(([p,n,r])=>({n,r,w:walkMin(p),a:ts[0]+r})).sort((a,b)=>a.a+a.w-b.a-b.w)[0];
-    h+=`<div class="big">Bus leaves ${fmt(ts[0])}</div><div class="times">${ts.slice(0,3).map((t,i)=>`<span class="${i?"":"first"}">${fmt(t)}</span>`).join("")}</div><ul><li>Board at S3 Main Entrance (Central Ave curb)</li><li>Best stop for you: <b>${o.n}</b>, arrive ${fmt(o.a)}</li><li>Then walk about <b>${o.w} min</b> to your place (Google Maps walking route)</li></ul><div class="note">The last bus home leaves the park at 9:32 pm.</div>`;
+    h+=`<div class="big">Bus leaves ${fmt(ts[0])}</div><div class="times">${ts.slice(0,3).map((t,i)=>`<span class="${i?"":"first"}">${fmt(t)}</span>`).join("")}</div><ul><li>Board at S3 Main Entrance (Central Ave curb)</li><li>Best stop for you: <b>${o.n}</b>, arrive ${fmt(o.a)}</li><li>Then walk about <b>${o.w} min</b> to your place</li></ul><div class="note">The last bus home leaves the park at 9:32 pm.</div>`;
   }
   return h;
 }
 function transitHtml(){
-  const r=st.routes.transit,m=mins(r);
-  if(!ready)return`<div class="big">Waiting for map</div><p>Load Google Maps to see live transit times.</p>`;
-  if(!r||m==null)return`<div class="big">No transit route</div><p>Google Maps did not return a transit trip. Try another starting point or check CTA alerts.</p>`;
-  const leg=r.routes[0].legs[0];
-  const lis=steps(r).map(s=>`<li>${s.line?`<b>${s.line}</b> · `:""}${s.t} <b>${s.dur} min</b></li>`).join("");
-  return`<div class="big">${m} min</div><p>${leg.duration.text} · ${leg.distance.text} via Google Maps</p><ul>${lis}</ul>`;
+  const r=st.routes.transit;
+  if(!r)return`<div class="big">No transit route</div><p>No transit trip was found from this starting point. Try another place or check CTA alerts.</p>`;
+  const lis=(r.steps||[]).map(s=>`<li>${s.line?`<b>${s.line}</b> · `:""}${s.text} <b>${s.minutes} min</b></li>`).join("");
+  return`<div class="big">${r.minutes} min</div><p>${r.minutes} min${miles(r.meters)}</p><ul>${lis}</ul>`;
 }
 function driveHtml(){
-  const r=st.routes.drive,m=mins(r);
-  if(!ready)return`<div class="big">Waiting for map</div><p>Load Google Maps to see live driving times.</p>`;
-  if(!r||m==null)return`<div class="big">No driving route</div><p>Google Maps did not return a driving trip.</p>`;
-  const leg=r.routes[0].legs[0];
-  const hi=Math.round(m*1.15);
-  return`<div class="big">${m===hi?m:m+"–"+hi} min</div><p>${leg.duration.text} · ${leg.distance.text} via Google Maps</p><ul><li>Follow the orange route on the map</li><li>Park in the lot off Central Ave: enter at the <b>north</b> end, exit at the <b>south</b> end (one-way)</li><li>Accessible parking is closest to the entrance. When the lot is full, use street parking.</li><li>Ride-share and drop-off: <b>S3 curb only</b>, stop and go</li></ul>`;
+  const r=st.routes.drive;
+  if(!r)return`<div class="big">No driving route</div><p>No driving trip was found from this starting point.</p>`;
+  const hi=Math.round(r.minutes*1.15);
+  return`<div class="big">${r.minutes===hi?r.minutes:r.minutes+"–"+hi} min</div><p>${r.minutes} min${miles(r.meters)}</p><ul><li>Follow the orange route on the map</li><li>Park in the lot off Central Ave: enter at the <b>north</b> end, exit at the <b>south</b> end (one-way)</li><li>Accessible parking is closest to the entrance. When the lot is full, use street parking.</li><li>Ride-share and drop-off: <b>S3 curb only</b>, stop and go</li></ul>`;
 }
 const link=mode=>{
   const ad=$("adr").value.trim(),o=ad||(st.a?st.a.lat.toFixed(5)+","+st.a.lng.toFixed(5):""),d=DEST;
@@ -207,7 +183,7 @@ function render(){
   const L=($("tm").value||"12:00").split(":").reduce((a,b)=>a*60+ +b);
   $("tl").textContent=st.dir==1?"Leave at":"Leave the park at";
   if(!st.a){$("gm").textContent="Pick a starting point, use your location, search an address, or tap the map.";$("out").innerHTML="";return}
-  if(!ready)$("gm").textContent="Map is not loaded yet. Add an API key and tap Load map.";
+  if(!ready)$("gm").textContent="Loading the map…";
   else if(st.routes.drive||st.routes.transit)$("gm").textContent="";
   $("out").innerHTML=`<div class="opt sh"><h2>🚌 Free shuttle<span class="tag">FREE</span></h2>${shuttle(L)}</div>
 <div class="opt tr"><h2>🚇 Public transit</h2>${transitHtml()}<a class="lnk" target="_blank" rel="noopener" href="${link("transit")}">Transit directions in Google Maps ↗</a><br><a class="lnk" target="_blank" rel="noopener" href="https://www.transitchicago.com/">CTA service alerts ↗</a></div>
@@ -226,8 +202,6 @@ function pin(pos,title,label,color){
 }
 function initMap(){
   map=new google.maps.Map($("gmap"),{center:EV,zoom:12,mapTypeControl:false,streetViewControl:false,fullscreenControl:true});
-  ds=new google.maps.DirectionsService();
-  renderers={drive:mkRenderer("#e8590c"),transit:mkRenderer("#1f6fc2"),walk:mkRenderer("#0f7c85")};
   pin(EV,"Festival Main Entrance","S3","#0f7c85");
   pin(S1,"S1 Union Station","S1","#0f7c85");
   pin(S2,"S2 Austin Blue Line","S2","#0f7c85");
@@ -239,14 +213,11 @@ function initMap(){
   if(st.a){you.setPosition(st.a);fitMap();updateRoutes()}else fitMap();
 }
 function loadMaps(key){
-  if(!key){$("gm").textContent="Paste a Google Maps API key, then tap Load map.";return}
-  localStorage.setItem("cp_gmaps_key",key);
   if(window.google&&google.maps){if(!ready)initMap();return}
-  $("gm").textContent="Loading Google Maps…";
   const s=document.createElement("script");
   s.src="https://maps.googleapis.com/maps/api/js?key="+encodeURIComponent(key)+"&callback=initMap";
   s.async=true;s.defer=true;
-  s.onerror=()=>{$("gm").textContent="Could not load Google Maps. Check the API key and that billing is enabled."};
+  s.onerror=()=>{$("gm").textContent="The map could not be loaded."};
   window.initMap=initMap;
   document.head.appendChild(s);
 }
@@ -307,8 +278,6 @@ $("adr").addEventListener("keydown",e=>{
 });
 document.addEventListener("click",e=>{if(!e.target.closest("#adrbox"))hideAddrList()});
 $("zm").onclick=()=>{st.close=!st.close;$("zm").textContent=st.close?"Show the whole trip":"Zoom to the park";if(st.close&&map){map.setCenter(EV);map.setZoom(15)}else fitMap()};
-$("gkey").value=localStorage.getItem("cp_gmaps_key")||MAPS_KEY;
-$("loadmap").onclick=()=>loadMaps($("gkey").value.trim());
-loadMaps($("gkey").value.trim());
+loadMaps(MAPS_KEY);
 render();
 </script></body></html>
