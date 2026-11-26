@@ -9,6 +9,7 @@ import { PaymentController } from "./controllers/PaymentController";
 import { ReportController } from "./controllers/ReportController";
 import type { PaymentData } from "./models/Payment";
 import { JsonFilePaymentRepository } from "./repositories/JsonFilePaymentRepository";
+import { NeonPaymentRepository } from "./repositories/NeonPaymentRepository";
 import type { PaymentRepository } from "./repositories/PaymentRepository";
 import { CardValidator } from "./services/CardValidator";
 import { CatalogService } from "./services/CatalogService";
@@ -35,7 +36,9 @@ type Options = {
 export function buildContainer(options: Options = {}) {
   const config = options.config ?? loadConfig();
   const catalog = options.catalog ?? buildCatalog();
-  const paymentRepository = options.paymentRepository ?? new JsonFilePaymentRepository(config.dataFile);
+  const paymentRepository =
+    options.paymentRepository ??
+    (process.env.DATABASE_URL ? new NeonPaymentRepository() : new JsonFilePaymentRepository(config.dataFile));
   const paymentProcessor = options.paymentProcessor ?? new MockCardProcessor();
   const loadMockPayments =
     options.loadMockPayments ?? (async () => JSON.parse(await fs.readFile(config.mockFile, "utf8")) as PaymentData[]);
