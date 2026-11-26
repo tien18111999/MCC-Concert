@@ -15,6 +15,12 @@ export function Footer() {
           <a href="/staff" className="mt-4 inline-block text-xs text-white/40 underline-offset-2 hover:text-white hover:underline">
             Staff portal
           </a>
+          <a href="/reports" className="ml-4 mt-4 inline-block text-xs text-white/40 underline-offset-2 hover:text-white hover:underline">
+            Sales report
+          </a>
+          <a href="/forecast" className="ml-4 mt-4 inline-block text-xs text-white/40 underline-offset-2 hover:text-white hover:underline">
+            Forecast
+          </a>
         </div>
         <div>
           <p className="font-semibold text-white">Contact</p>

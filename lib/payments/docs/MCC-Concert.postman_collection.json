@@ -1,0 +1,214 @@
+{
+  "info": {
+    "name": "MCC Concert API",
+    "description": "Every endpoint of the MCC festival backend. Start the server with `npm start` first.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "simDate",
+      "value": "2027-05-30"
+    }
+  ],
+  "item": [
+    {
+      "name": "Catalog: list tickets",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/catalog"
+      }
+    },
+    {
+      "name": "Discount: check MCCVIBES",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Simulated-Date",
+            "value": "{{simDate}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/discounts/MCCVIBES"
+      }
+    },
+    {
+      "name": "Discount: invalid code",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Simulated-Date",
+            "value": "{{simDate}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/discounts/NOPE"
+      }
+    },
+    {
+      "name": "Payment: approved (Visa + discount + donation)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Simulated-Date",
+            "value": "{{simDate}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": { \"general\": 2, \"senior\": 1 },\n  \"discountCode\": \"MCCVIBES\",\n  \"donation\": 5,\n  \"card\": {\n    \"name\": \"Jane Doe\",\n    \"number\": \"4242 4242 4242 4242\",\n    \"expiry\": \"12/30\",\n    \"cvc\": \"123\"\n  }\n}"
+        },
+        "url": "{{baseUrl}}/api/payments"
+      }
+    },
+    {
+      "name": "Payment: declined card",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Simulated-Date",
+            "value": "{{simDate}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": { \"general\": 1 },\n  \"card\": {\n    \"name\": \"Jane Doe\",\n    \"number\": \"4000 0000 0000 0002\",\n    \"expiry\": \"12/30\",\n    \"cvc\": \"123\"\n  }\n}"
+        },
+        "url": "{{baseUrl}}/api/payments"
+      }
+    },
+    {
+      "name": "Payment: free order (no card)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Simulated-Date",
+            "value": "{{simDate}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": { \"senior\": 2 }\n}"
+        },
+        "url": "{{baseUrl}}/api/payments"
+      }
+    },
+    {
+      "name": "Payment: error (more than 10 tickets)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Simulated-Date",
+            "value": "{{simDate}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": { \"general\": 11 },\n  \"card\": {\n    \"name\": \"Jane Doe\",\n    \"number\": \"4242 4242 4242 4242\",\n    \"expiry\": \"12/30\",\n    \"cvc\": \"123\"\n  }\n}"
+        },
+        "url": "{{baseUrl}}/api/payments"
+      }
+    },
+    {
+      "name": "Report: all sales",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/reports"
+      }
+    },
+    {
+      "name": "Report: Visa, approved only",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/reports?cardBrand=Visa&status=Approved",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "reports"
+          ],
+          "query": [
+            {
+              "key": "cardBrand",
+              "value": "Visa"
+            },
+            {
+              "key": "status",
+              "value": "Approved"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Dev: /api/test-charge (load mock payments)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/test-charge"
+      }
+    },
+    {
+      "name": "Dev: /api/refresh (wipe data file)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/refresh"
+      }
+    },
+    {
+      "name": "Forecast: settings",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/forecast"
+      }
+    },
+    {
+      "name": "Forecast: calculate",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"earlyBird\": 100,\n  \"general\": 50,\n  \"discounted\": 10,\n  \"atDoor\": 20,\n  \"vendors\": 6\n}"
+        },
+        "url": "{{baseUrl}}/api/forecast"
+      }
+    },
+    {
+      "name": "Forecast: random",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/forecast/random"
+      }
+    }
+  ]
+}

@@ -1,5 +1,4 @@
 import { neon } from "@neondatabase/serverless";
-import { DISCOUNT_CODES, MAX_PER_TYPE } from "@/lib/tickets";
 
 export type WaitlistEntry = {
   id: string;
@@ -107,40 +106,4 @@ export async function listVolunteers(): Promise<VolunteerEntry[]> {
 
 export async function clearVolunteers() {
   await database()`delete from volunteers`;
-}
-
-export async function readDiscountUsed(code: string) {
-  const rows = await database()`
-    select tickets_used
-    from discount_uses
-    where code = ${code}
-  `;
-  return Math.max(0, Number(rows[0]?.tickets_used ?? 0));
-}
-
-export async function claimDiscount(code: string, count: number) {
-  const rule = DISCOUNT_CODES[code];
-  if (!rule) return null;
-  const requested = Math.max(0, Math.min(MAX_PER_TYPE, Math.floor(count)));
-  if (requested === 0) {
-    return { used: await readDiscountUsed(code), applied: 0, limit: rule.limit };
-  }
-  const rows = await database()`
-    with before as (
-      select tickets_used from discount_uses where code = ${code}
-    ),
-    upd as (
-      update discount_uses
-      set tickets_used = least(${rule.limit}, tickets_used + ${requested})
-      where code = ${code}
-      returning tickets_used
-    )
-    select upd.tickets_used as used, upd.tickets_used - before.tickets_used as applied
-    from upd, before
-  `;
-  return {
-    used: Number(rows[0]?.used ?? 0),
-    applied: Number(rows[0]?.applied ?? 0),
-    limit: rule.limit,
-  };
 }
